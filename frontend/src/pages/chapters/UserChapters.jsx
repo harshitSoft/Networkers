@@ -1,0 +1,63 @@
+import { useEffect, useState } from "react";
+import { Send, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { chapterApi } from "../../api/chapterApi";
+import { useAuth } from "../../context/AuthContext.jsx";
+import GlowCard from "../../components/ui/GlowCard.jsx";
+
+export default function UserChapters() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [chapters, setChapters] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [members, setMembers] = useState([]);
+  useEffect(() => { chapterApi.all().then(setChapters).catch(() => setChapters([])); }, []);
+  async function selectChapter(chapter) {
+    setSelected(chapter);
+    const data = await chapterApi.userMembers(chapter.id);
+    setMembers(Array.isArray(data) ? data : []);
+  }
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Member chapters</p><h2 className="mt-1 page-title">Browse <span className="text-[#E8262A]">Chapters</span></h2><p className="mt-1 text-sm text-slate-500">Browse chapters and discover members for referrals.</p></div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {chapters.map((chapter) => {
+          const isMine = String(user?.chapterId || "") === String(chapter.id) || user?.chapterName === chapter.chapterName;
+          return (
+            <GlowCard as="button" key={chapter.id} onClick={() => selectChapter(chapter)} className={`text-left ${isMine ? "ring-4 ring-red-100" : ""}`}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-black uppercase text-red-700">Chapter {chapter.chapterNumber}</p>
+                {isMine && <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">Your Chapter</span>}
+              </div>
+              <h3 className="mt-2 text-xl font-black">{chapter.chapterName}</h3>
+              <p className="mt-1 text-sm text-slate-500">{chapter.location}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600">{chapter.description}</p>
+              <div className="mt-4 space-y-1 text-sm font-semibold">
+                <p>{chapter.subscriptionName} - Rs {Number(chapter.subscriptionAmount || 0).toLocaleString("en-IN")}</p>
+                <p>{chapter.subscriptionDurationMonths} months | {chapter.memberCount} members</p>
+              </div>
+            </GlowCard>
+          );
+        })}
+      </div>
+      {selected && (
+        <section className="card p-5">
+          <div className="flex items-center gap-2"><Users className="text-red-700" size={20} /><h3 className="text-xl font-black">{selected.chapterName} Members</h3></div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {members.map((member) => (
+              <GlowCard as="article" key={member.id}>
+                <h4 className="font-black">{member.fullName}</h4>
+                <p className="text-sm font-semibold text-slate-700">{member.businessName}</p>
+                <p className="mt-1 text-sm text-red-700">{member.businessCategory}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{member.services}</p>
+                <p className="mt-2 text-sm text-slate-500">{member.location} {member.mobile ? `| ${member.mobile}` : ""}</p>
+                <button className="btn-primary mt-4" onClick={() => navigate(`/give-referral?memberId=${member.id}`)}><Send size={16} /> Give Referral</button>
+              </GlowCard>
+            ))}
+            {members.length === 0 && <p className="text-sm text-slate-500">No members assigned to this chapter yet.</p>}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,122 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import PublicNavbar from "./PublicNavbar.jsx";
+import LandingFooter from "../../components/landing/LandingFooter.jsx";
+import GalleryTabs from "../../components/gallery/GalleryTabs.jsx";
+import GalleryGrid from "../../components/gallery/GalleryGrid.jsx";
+import LightboxModal from "../../components/gallery/LightboxModal.jsx";
+import GlowCard from "../../components/ui/GlowCard.jsx";
+import { eventApi } from "../../api/eventApi";
+
+const tabs = ["All", "Chapter Meetings", "Workshops", "Networking Events", "Celebrations"];
+
+const fallbackItems = [
+  ["chapter-meet", "Chapter Meetings", "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80", "North Chapter Power Breakfast", "June 2026"],
+  ["workshop-1", "Workshops", "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80", "Referral Strategy Workshop", "May 2026"],
+  ["networking-1", "Networking Events", "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80", "Founders Networking Evening", "April 2026"],
+  ["celebration-1", "Celebrations", "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80", "Business Milestone Celebration", "March 2026"],
+  ["chapter-2", "Chapter Meetings", "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=1200&q=80", "Member Spotlight Roundtable", "February 2026"],
+  ["workshop-2", "Workshops", "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80", "Growth Systems Clinic", "January 2026"],
+  ["networking-2", "Networking Events", "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80", "City Business Mixer", "December 2025"],
+  ["celebration-2", "Celebrations", "https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=1200&q=80", "Annual Recognition Night", "November 2025"],
+  ["chapter-3", "Chapter Meetings", "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1200&q=80", "Trusted Leads Forum", "October 2025"]
+].map(([id, category, image, title, date]) => ({ id, category, image, title, date }));
+
+export default function GalleryPage() {
+  const [active, setActive] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [selectedId, setSelectedId] = useState(null);
+  const [apiItems, setApiItems] = useState([]);
+
+  useEffect(() => {
+    eventApi.all()
+      .then((events) => {
+        const items = Array.isArray(events) ? events.flatMap((event) => normalizeEvent(event)) : [];
+        setApiItems(items);
+      })
+      .catch(() => setApiItems([]));
+  }, []);
+
+  const allItems = apiItems.length > 0 ? apiItems : fallbackItems;
+  const filtered = useMemo(() => active === "All" ? allItems : allItems.filter((item) => item.category === active), [active, allItems]);
+  const visible = filtered.slice(0, visibleCount);
+  const selectedIndex = filtered.findIndex((item) => item.id === selectedId);
+  const selected = selectedIndex >= 0 ? filtered[selectedIndex] : null;
+
+  const close = useCallback(() => setSelectedId(null), []);
+  const previous = useCallback(() => setSelectedId(filtered[(selectedIndex - 1 + filtered.length) % filtered.length]?.id), [filtered, selectedIndex]);
+  const next = useCallback(() => setSelectedId(filtered[(selectedIndex + 1) % filtered.length]?.id), [filtered, selectedIndex]);
+
+  return (
+    <div className="min-h-screen bg-[#F5F5F5] text-[#1A1A1A]">
+      <PublicNavbar />
+      <main className="space-y-14 pb-14">
+        <section
+          className="relative grid min-h-[430px] place-items-center bg-cover bg-center px-4 text-center text-white"
+          style={{ backgroundImage: `url(${allItems[0]?.image || fallbackItems[0].image})` }}
+        >
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative max-w-4xl rounded-2xl bg-[#4D4D4D]/80 px-6 py-10 shadow-2xl backdrop-blur-sm">
+            <p className="text-sm font-black uppercase tracking-wide text-red-100">Networkers gallery</p>
+            <h1 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">Capturing Moments That Build Networks</h1>
+          </div>
+        </section>
+
+        <GalleryTabs tabs={tabs} active={active} onChange={(tab) => { setActive(tab); setVisibleCount(6); setSelectedId(null); }} />
+        <GalleryGrid items={visible} onOpen={(item) => setSelectedId(item.id)} />
+
+        {visibleCount < filtered.length && (
+          <div className="text-center">
+            <button type="button" className="btn-primary" onClick={() => setVisibleCount((count) => count + 3)}>Load More</button>
+          </div>
+        )}
+
+        <section className="bg-white px-4 py-12">
+          <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[["35+", "Active Members"], ["2+", "Local Chapters"], ["1+", "Cities"], ["200Cr+", "Business Done"]].map(([value, label]) => (
+              <GlowCard key={label} hover={false}>
+                <p className="text-4xl font-black text-[#E8262A]">{value}</p>
+                <p className="mt-1 text-sm font-bold uppercase tracking-wide text-slate-500">{label}</p>
+              </GlowCard>
+            ))}
+          </div>
+        </section>
+
+        <section className="px-4">
+          <div className="mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl bg-[#4D4D4D] p-8 text-white shadow-premium md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-3xl font-black">Start Growing Your Network Today</h2>
+              <p className="mt-2 max-w-2xl text-white/75">Meet trusted members, exchange high-quality referrals, and turn conversations into measurable business growth.</p>
+            </div>
+            <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-red-700 transition hover:-translate-y-0.5">
+              Join Now <ArrowRight size={17} />
+            </Link>
+          </div>
+        </section>
+      </main>
+      <LandingFooter />
+      <LightboxModal item={selected} onClose={close} onPrevious={previous} onNext={next} />
+    </div>
+  );
+}
+
+function normalizeEvent(event) {
+  const category = event.category || event.galleryCategory || categoryFromEvent(event);
+  const date = event.eventDate ? new Date(event.eventDate).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "Networkers event";
+  return (event.images || []).map((image, index) => ({
+    id: `${event.id}-${image.id || index}`,
+    category,
+    image: image.imageUrl || image.url,
+    title: event.title || "Networkers event",
+    date
+  })).filter((item) => item.image);
+}
+
+function categoryFromEvent(event) {
+  const text = `${event.title || ""} ${event.description || ""}`.toLowerCase();
+  if (text.includes("workshop")) return "Workshops";
+  if (text.includes("celebration") || text.includes("award")) return "Celebrations";
+  if (text.includes("network")) return "Networking Events";
+  return "Chapter Meetings";
+}

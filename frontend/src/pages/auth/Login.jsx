@@ -19,8 +19,8 @@ export default function Login() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [form, setForm] = useState({
-    email: "admin@networkers.com",
-    password: "admin123",
+    email: "",
+    password: "",
   });
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState("email");
@@ -87,7 +87,7 @@ export default function Login() {
   if (loading) return <Loader fullScreen label="Opening your dashboard" />;
   return (
     <AuthFrame>
-      <form onSubmit={submit} className="mt-8 space-y-5">
+      <form onSubmit={submit} autoComplete="off" className="mt-8 space-y-5">
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#b3b3b3]">
             Email address
@@ -102,6 +102,7 @@ export default function Login() {
               aria-label="Email address"
               className="field !pl-12"
               type="email"
+              autoComplete="username"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
@@ -121,6 +122,7 @@ export default function Login() {
               aria-label="Password"
               className="field !px-12"
               type={show ? "text" : "password"}
+              autoComplete="current-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />

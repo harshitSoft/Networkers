@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { CalendarDays, IndianRupee, MapPin, Send, UserRound } from "lucide-react";
 import { referralApi } from "../../api/referralApi";
 import EmptyState from "../../components/EmptyState.jsx";
-import Loader from "../../components/Loader.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 
 export default function BusinessOpportunities() {
@@ -26,8 +25,6 @@ export default function BusinessOpportunities() {
     toast.success("Contact requested. Lead added to Client Leads Received.");
     load();
   }
-
-  if (loading) return <Loader />;
 
   return (
     <div className="space-y-5">
@@ -68,7 +65,7 @@ export default function BusinessOpportunities() {
         ))}
       </div>
 
-      {items.length === 0 && <EmptyState title="No open referrals from your network yet." message="When connected business owners post open referrals, they will appear here." actionLabel="Create Open Referral" actionTo="/referrals/create" />}
+      {!loading && items.length === 0 && <EmptyState title="No open referrals from your network yet." message="When connected business owners post open referrals, they will appear here." actionLabel="Create Open Referral" actionTo="/referrals/create" />}
     </div>
   );
 }

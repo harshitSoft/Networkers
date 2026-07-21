@@ -4,22 +4,21 @@ Networkers is a full-stack subscription-based chapter business community platfor
 
 ## Tech Stack
 
-- Backend: Spring Boot 3, Java 17, Spring Security, JWT, Spring Data JPA, MySQL, Maven
+- Backend: Spring Boot 3, Java 17, Spring Security, JWT, Spring Data JPA, PostgreSQL (Neon), Maven
 - Frontend: React, Vite, Tailwind CSS, Axios, React Router
 - Backend port: `8080`
 - Frontend port: `5173`
 
 ## Database
 
-Create/start MySQL locally. The backend uses:
+The backend is currently configured for Neon PostgreSQL:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/networkers_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-spring.datasource.username=root
-spring.datasource.password=Ram1234
+spring.datasource.url=jdbc:postgresql://ep-blue-mouse-atyf8r3f-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channelBinding=require
+spring.datasource.username=neondb_owner
 ```
 
-The database is created automatically if the configured MySQL user has permission.
+Hibernate creates or updates the application tables automatically. The previous MySQL datasource settings and connector remain commented in the backend configuration, so they can be restored without recreating them.
 
 ## Run Backend
 

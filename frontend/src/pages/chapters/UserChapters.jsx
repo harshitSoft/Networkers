@@ -46,7 +46,7 @@ export default function UserChapters() {
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {members.map((member) => (
               <GlowCard as="article" key={member.id}>
-                <h4 className="font-black">{member.fullName}</h4>
+                <div className="mb-4 flex items-center gap-3"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-red-500/30 bg-red-500/10">{member.profileImage?<img className="h-full w-full object-cover" src={member.profileImage} alt={member.fullName}/>:<span className="grid h-full place-items-center text-lg font-black text-red-500">{member.fullName?.[0]}</span>}</div><h4 className="font-black">{member.fullName}</h4></div>
                 <p className="text-sm font-semibold text-slate-700">{member.businessName}</p>
                 <p className="mt-1 text-sm text-red-700">{member.businessCategory}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{member.services}</p>

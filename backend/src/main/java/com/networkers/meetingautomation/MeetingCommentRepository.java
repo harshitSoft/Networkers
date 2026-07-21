@@ -1,0 +1,2 @@
+package com.networkers.meetingautomation; import org.springframework.data.jpa.repository.*; import org.springframework.data.repository.query.Param; import java.util.*;
+public interface MeetingCommentRepository extends JpaRepository<MeetingComment,Long>{ List<MeetingComment> findByMeetingIdOrderByCreatedAtAsc(Long meetingId); long countByMeetingId(Long meetingId); @Modifying @Query("delete from MeetingComment c where c.meeting.group.id=:groupId") void deleteByMeetingGroupId(@Param("groupId") Long groupId); }

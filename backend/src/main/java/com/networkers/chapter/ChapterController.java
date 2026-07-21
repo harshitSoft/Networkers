@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.Base64;
 
 @RestController
 public class ChapterController {
@@ -30,9 +32,11 @@ public class ChapterController {
 
     @PostMapping("/api/admin/chapters")
     public ApiResponse<Map<String, Object>> create(@RequestBody ChapterRequest request) {
-        Chapter chapter = new Chapter();
+        if (request.chapterNumber() == null) throw new IllegalArgumentException("Chapter number is required");
+        Chapter chapter = chapters.findByChapterNumber(request.chapterNumber()).orElseGet(Chapter::new);
+        if (chapter.getId() != null && chapter.isActive()) throw new IllegalArgumentException("Chapter number " + request.chapterNumber() + " already exists");
         apply(chapter, request);
-        return ApiResponse.ok("Chapter created", dto(chapters.save(chapter)));
+        return ApiResponse.ok(chapter.getId() == null ? "Chapter created" : "Chapter reactivated", dto(chapters.save(chapter)));
     }
 
     @PutMapping("/api/admin/chapters/{id}")
@@ -47,6 +51,14 @@ public class ChapterController {
         Chapter chapter = find(id);
         chapter.setActive(false);
         return ApiResponse.ok("Chapter deactivated", dto(chapters.save(chapter)));
+    }
+
+    @PostMapping("/api/admin/chapters/{id}/banner")
+    public ApiResponse<Map<String, Object>> uploadBanner(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws java.io.IOException {
+        if (file.isEmpty() || file.getContentType() == null || !file.getContentType().startsWith("image/")) throw new IllegalArgumentException("Choose a valid image file");
+        if (file.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("Image must be smaller than 10 MB");
+        Chapter chapter = find(id); chapter.setBannerImage("data:" + file.getContentType() + ";base64," + Base64.getEncoder().encodeToString(file.getBytes()));
+        return ApiResponse.ok("Chapter banner uploaded", dto(chapters.save(chapter)));
     }
 
     @GetMapping("/api/admin/chapters/{id}/members")
@@ -67,10 +79,8 @@ public class ChapterController {
         chapter.setChapterNumber(request.chapterNumber());
         chapter.setChapterName(request.chapterName());
         chapter.setDescription(request.description());
-        chapter.setLocation(request.location());
         chapter.setSubscriptionName(request.subscriptionName());
         chapter.setSubscriptionAmount(request.subscriptionAmount());
-        chapter.setSubscriptionDurationMonths(request.subscriptionDurationMonths());
         chapter.setActive(request.active() == null || request.active());
     }
 
@@ -80,10 +90,9 @@ public class ChapterController {
                 "chapterNumber", chapter.getChapterNumber() == null ? 0 : chapter.getChapterNumber(),
                 "chapterName", chapter.getChapterName() == null ? "" : chapter.getChapterName(),
                 "description", chapter.getDescription() == null ? "" : chapter.getDescription(),
-                "location", chapter.getLocation() == null ? "" : chapter.getLocation(),
+                "bannerImage", chapter.getBannerImage() == null ? "" : chapter.getBannerImage(),
                 "subscriptionName", chapter.getSubscriptionName() == null ? "" : chapter.getSubscriptionName(),
                 "subscriptionAmount", chapter.getSubscriptionAmount() == null ? BigDecimal.ZERO : chapter.getSubscriptionAmount(),
-                "subscriptionDurationMonths", chapter.getSubscriptionDurationMonths() == null ? 0 : chapter.getSubscriptionDurationMonths(),
                 "active", chapter.isActive(),
                 "memberCount", users.countByChapterAndDeletedFalse(chapter));
     }
@@ -96,11 +105,11 @@ public class ChapterController {
                 "mobile", user.getMobile() == null ? "" : user.getMobile(),
                 "businessName", user.getBusinessName() == null ? "" : user.getBusinessName(),
                 "businessCategory", user.getBusinessCategory() == null ? "" : user.getBusinessCategory(),
+                "profileImage", user.getProfileImage() == null ? "" : user.getProfileImage(),
                 "services", user.getServices() == null ? "" : user.getServices(),
                 "location", user.getLocation() == null ? "" : user.getLocation());
     }
 
-    public record ChapterRequest(Integer chapterNumber, String chapterName, String description, String location,
-                                 String subscriptionName, BigDecimal subscriptionAmount,
-                                 Integer subscriptionDurationMonths, Boolean active) {}
+    public record ChapterRequest(Integer chapterNumber, String chapterName, String description,
+                                 String subscriptionName, BigDecimal subscriptionAmount, Boolean active) {}
 }

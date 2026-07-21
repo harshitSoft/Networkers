@@ -1,6 +1,11 @@
 package com.networkers.referral;
 
 import com.networkers.common.ApiResponse;
+import com.networkers.business.BusinessProfile;
+import com.networkers.business.BusinessProfileRepository;
+import com.networkers.community.Post;
+import com.networkers.community.PostRepository;
+import com.networkers.community.PostType;
 import com.networkers.notification.NotificationService;
 import com.networkers.security.CurrentUser;
 import com.networkers.user.User;
@@ -8,6 +13,7 @@ import com.networkers.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,9 +26,11 @@ public class ReferralController {
     private final ReferralRevenueRepository revenues;
     private final OpenReferralPostRepository openReferralPosts;
     private final UserRepository users;
+    private final BusinessProfileRepository businessProfiles;
     private final NotificationService notificationService;
-    public ReferralController(ReferralRepository referrals, ReferralRevenueRepository revenues, OpenReferralPostRepository openReferralPosts, UserRepository users, NotificationService notificationService) {
-        this.referrals = referrals; this.revenues = revenues; this.openReferralPosts = openReferralPosts; this.users = users; this.notificationService = notificationService;
+    private final PostRepository posts;
+    public ReferralController(ReferralRepository referrals, ReferralRevenueRepository revenues, OpenReferralPostRepository openReferralPosts, UserRepository users, BusinessProfileRepository businessProfiles, NotificationService notificationService, PostRepository posts) {
+        this.referrals = referrals; this.revenues = revenues; this.openReferralPosts = openReferralPosts; this.users = users; this.businessProfiles = businessProfiles; this.notificationService = notificationService; this.posts = posts;
     }
 
     @GetMapping("/api/members")
@@ -30,7 +38,10 @@ public class ReferralController {
                                                           @RequestParam(required = false) String category,
                                                           @RequestParam(required = false) String location,
                                                           @RequestParam(required = false) String name) {
-        return ApiResponse.ok("Members", users.searchMembers(chapterId, blankToNull(category), blankToNull(location), blankToNull(name)).stream().map(this::memberDto).toList());
+        Long currentUserId = CurrentUser.get().getId();
+        return ApiResponse.ok("Members", users.searchMembers(chapterId, normalizeFilter(category), normalizeFilter(location), normalizeFilter(name)).stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .map(this::memberDto).toList());
     }
 
     @GetMapping("/api/referrals/dashboard")
@@ -52,6 +63,10 @@ public class ReferralController {
 
     @PostMapping("/api/referrals/give")
     public ApiResponse<Referral> give(@Valid @RequestBody ReferralRequest request) {
+        requireText(request.clientName(), "Client name");
+        requireText(request.clientPhone(), "Client contact number");
+        requireText(request.workTitle(), "Work title");
+        requireText(request.workCategory(), "Business type");
         return direct(request);
     }
 
@@ -130,7 +145,7 @@ public class ReferralController {
     @GetMapping("/api/referrals/received") public ApiResponse<List<Referral>> received() { return ApiResponse.ok("Received referrals", referrals.findByReceivedByOrderByCreatedAtDesc(CurrentUser.get())); }
     @GetMapping("/api/referrals/given") public ApiResponse<List<Referral>> given() { return ApiResponse.ok("Given referrals", referrals.findByGivenByOrderByCreatedAtDesc(CurrentUser.get())); }
     @GetMapping("/api/referrals/{id}") public ApiResponse<Referral> one(@PathVariable Long id) { return ApiResponse.ok("Referral", allowed(id)); }
-    @PutMapping("/api/referrals/{id}/status") public ApiResponse<Referral> status(@PathVariable Long id, @RequestBody StatusRequest request) {
+    @PutMapping("/api/referrals/{id}/status") @Transactional public ApiResponse<Referral> status(@PathVariable Long id, @RequestBody StatusRequest request) {
         Referral r = allowed(id);
         if (!r.getReceivedBy().getId().equals(CurrentUser.get().getId())) throw new IllegalStateException("Only receiver can update status");
         if (!isAllowedNext(r.getStatus(), request.status())) throw new IllegalStateException("Referral status must move one step at a time");
@@ -143,7 +158,9 @@ public class ReferralController {
             saveRevenue(r, amount);
         }
         notificationService.notify(r.getGivenBy(), "Referral status updated", label(r) + " is now " + request.status());
-        return ApiResponse.ok("Status updated", referrals.save(r));
+        Referral saved = referrals.save(r);
+        if (request.status() == ReferralStatus.COMPLETED) createReferralSuccessStory(saved);
+        return ApiResponse.ok("Status updated", saved);
     }
     @PutMapping("/api/referrals/{id}/business-value") public ApiResponse<Referral> value(@PathVariable Long id, @RequestBody ValueRequest request) {
         Referral r = allowed(id);
@@ -163,9 +180,9 @@ public class ReferralController {
     private boolean isAllowedNext(ReferralStatus current, ReferralStatus next) {
         if (current == null) current = ReferralStatus.NEW;
         return switch (current) {
-            case NEW -> next == ReferralStatus.ACCEPTED || next == ReferralStatus.DECLINED;
-            case ACCEPTED -> next == ReferralStatus.IN_DISCUSSION;
-            case IN_DISCUSSION -> next == ReferralStatus.CONFIRMED;
+            case NEW -> next == ReferralStatus.ACCEPTED || next == ReferralStatus.DECLINED || next == ReferralStatus.LOST;
+            case ACCEPTED -> next == ReferralStatus.IN_DISCUSSION || next == ReferralStatus.LOST;
+            case IN_DISCUSSION -> next == ReferralStatus.CONFIRMED || next == ReferralStatus.LOST;
             case CONFIRMED -> next == ReferralStatus.COMPLETED;
             case COMPLETED, DECLINED, CONTACTED, MEETING_SCHEDULED, CONVERTED, LOST -> false;
         };
@@ -178,8 +195,8 @@ public class ReferralController {
     private String firstText(String primary, String fallback) {
         return primary != null && !primary.isBlank() ? primary : fallback;
     }
-    private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
+    private String normalizeFilter(String value) {
+        return value == null ? "" : value.trim();
     }
     private void saveRevenue(Referral referral, BigDecimal amount) {
         ReferralRevenue revenue = revenues.findByReferral(referral).orElseGet(ReferralRevenue::new);
@@ -192,16 +209,36 @@ public class ReferralController {
         revenue.setYear(now.getYear());
         revenues.save(revenue);
     }
+    private void createReferralSuccessStory(Referral referral) {
+        User giver = referral.getGivenBy();
+        Post post = new Post();
+        post.setUser(referral.getReceivedBy());
+        post.setType(PostType.SUCCESS_STORY);
+        post.setTitle("Referral successfully completed");
+        post.setContent("Thank you so much, %s, for your referral! 🎉\n\nI'm happy to share that the referral has been successfully completed, and I was able to secure the business through it. I truly appreciate your support and trust. Looking forward to more collaborations in the future!\n\nThanks again, %s! 🙌".formatted(giver.getFullName(), giver.getFullName()));
+        post.getMentions().add(giver);
+        posts.save(post);
+    }
     private Map<String, Object> memberDto(User user) {
+        BusinessProfile profile = businessProfiles.findByUser(user).orElse(null);
         return Map.of(
                 "id", user.getId(),
                 "fullName", user.getFullName() == null ? "" : user.getFullName(),
-                "businessName", user.getBusinessName() == null ? "" : user.getBusinessName(),
-                "businessCategory", user.getBusinessCategory() == null ? "" : user.getBusinessCategory(),
-                "services", user.getServices() == null ? "" : user.getServices(),
-                "location", user.getLocation() == null ? "" : user.getLocation(),
+                "profileImage", firstText(user.getProfileImage(), profile == null ? "" : profile.getLogoUrl()),
+                "businessName", profileText(profile == null ? null : profile.getBusinessName(), user.getBusinessName()),
+                "businessCategory", profileText(profile == null ? null : profile.getCategory(), user.getBusinessCategory()),
+                "services", profileText(profile == null ? null : profile.getServices(), user.getServices()),
+                "businessDescription", profile == null || profile.getDescription() == null ? "" : profile.getDescription(),
+                "location", profileText(profile == null ? null : profile.getCity(), user.getLocation()),
                 "chapterId", user.getChapter() == null ? 0 : user.getChapter().getId(),
                 "chapterName", user.getChapter() == null ? "" : user.getChapter().getChapterName());
+    }
+    private String profileText(String profileValue, String userValue) {
+        String value = firstText(profileValue, userValue);
+        return value == null ? "" : value;
+    }
+    private void requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) throw new IllegalArgumentException(fieldName + " is required");
     }
     public record ReferralRequest(Long receivedById, Long receiverId, String clientName, String clientCompany, String clientPhone,
                                   String clientEmail, String requirement, String workName, String title, String productOrServiceRequired,

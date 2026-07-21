@@ -49,16 +49,16 @@ export default function GalleryPage() {
   const next = useCallback(() => setSelectedId(filtered[(selectedIndex + 1) % filtered.length]?.id), [filtered, selectedIndex]);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] text-[#1A1A1A]">
+    <div className="public-page">
       <PublicNavbar />
       <main className="space-y-14 pb-14">
         <section
           className="relative grid min-h-[430px] place-items-center bg-cover bg-center px-4 text-center text-white"
           style={{ backgroundImage: `url(${allItems[0]?.image || fallbackItems[0].image})` }}
         >
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="relative max-w-4xl rounded-2xl bg-[#4D4D4D]/80 px-6 py-10 shadow-2xl backdrop-blur-sm">
-            <p className="text-sm font-black uppercase tracking-wide text-red-100">Networkers gallery</p>
+          <div className="absolute inset-0 bg-black/75" />
+          <div className="glass-card relative max-w-4xl rounded-3xl px-6 py-10">
+            <p className="eyebrow">Networkers gallery</p>
             <h1 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">Capturing Moments That Build Networks</h1>
           </div>
         </section>
@@ -72,24 +72,24 @@ export default function GalleryPage() {
           </div>
         )}
 
-        <section className="bg-white px-4 py-12">
+        <section className="section-solid px-4 py-12">
           <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[["35+", "Active Members"], ["2+", "Local Chapters"], ["1+", "Cities"], ["200Cr+", "Business Done"]].map(([value, label]) => (
               <GlowCard key={label} hover={false}>
-                <p className="text-4xl font-black text-[#E8262A]">{value}</p>
-                <p className="mt-1 text-sm font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                <p className="font-data text-4xl font-black text-[#FF1E1E]">{value}</p>
+                <p className="mt-1 text-sm font-bold uppercase tracking-wide text-[#888]">{label}</p>
               </GlowCard>
             ))}
           </div>
         </section>
 
         <section className="px-4">
-          <div className="mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl bg-[#4D4D4D] p-8 text-white shadow-premium md:flex-row md:items-center md:justify-between">
+          <div className="glass-card mx-auto flex max-w-6xl flex-col gap-5 rounded-3xl bg-gradient-to-r from-[#8B0000]/70 to-[#0A0A0A] p-8 text-white md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-3xl font-black">Start Growing Your Network Today</h2>
               <p className="mt-2 max-w-2xl text-white/75">Meet trusted members, exchange high-quality referrals, and turn conversations into measurable business growth.</p>
             </div>
-            <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-red-700 transition hover:-translate-y-0.5">
+            <Link to="/login" className="glow-button glow-button-primary">
               Join Now <ArrowRight size={17} />
             </Link>
           </div>

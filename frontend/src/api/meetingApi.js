@@ -7,3 +7,10 @@ export const meetingApi = {
   received: () => api.get("/meetings/received").then(unwrap),
   sent: () => api.get("/meetings/sent").then(unwrap)
 };
+export const monthlyMeetingApi = {
+  mine: (month) => api.get("/monthly-meetings/mine", { params: month ? { month } : {} }).then(unwrap),
+  edit: (id, payload) => api.put(`/monthly-meetings/${id}`, payload).then(unwrap),
+  comment: (id, text) => api.post(`/monthly-meetings/${id}/comments`, { text }).then(unwrap),
+  adminOverview: (chapterId, month) => api.get(`/monthly-meetings/admin/chapters/${chapterId}`, { params: month ? { month } : {} }).then(unwrap),
+  regenerate: (chapterId, month) => api.post(`/monthly-meetings/admin/chapters/${chapterId}/regenerate`, null, { params: month ? { month } : {} }).then(unwrap)
+};

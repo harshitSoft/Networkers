@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.time.ZoneId;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/meetups")
@@ -20,6 +22,8 @@ public class MeetupController {
         this.meetups = meetups; this.attendees = attendees; this.notificationService = notificationService;
     }
     @PostMapping("/admin") public ApiResponse<Meetup> create(@RequestBody MeetupRequest r) {
+        if (r.date() == null) throw new IllegalArgumentException("Meetup date is required");
+        if (r.date().isBefore(today())) throw new IllegalArgumentException("Past-date meetups cannot be created");
         Meetup m = apply(new Meetup(), r); m.setCreatedBy(CurrentUser.get());
         return ApiResponse.ok("Meetup created", meetups.save(m));
     }
@@ -27,7 +31,7 @@ public class MeetupController {
         return ApiResponse.ok("Meetup updated", meetups.save(apply(get(id), r)));
     }
     @DeleteMapping("/admin/{id}") public ApiResponse<Void> delete(@PathVariable Long id) { meetups.delete(get(id)); return ApiResponse.ok("Meetup deleted", null); }
-    @GetMapping public ApiResponse<List<Meetup>> all() { return ApiResponse.ok("Meetups", meetups.findAllByOrderByDateAscStartTimeAsc()); }
+    @GetMapping @Transactional public ApiResponse<List<Meetup>> all() { completePastMeetups(); return ApiResponse.ok("Meetups", meetups.findAllByOrderByDateAscStartTimeAsc()); }
     @GetMapping("/{id}") public ApiResponse<Meetup> one(@PathVariable Long id) { return ApiResponse.ok("Meetup", get(id)); }
     @PostMapping("/{id}/join") public ApiResponse<MeetupAttendee> join(@PathVariable Long id) {
         Meetup m = get(id);
@@ -47,7 +51,13 @@ public class MeetupController {
     private Meetup apply(Meetup m, MeetupRequest r) {
         m.setTitle(r.title()); m.setDescription(r.description()); m.setDate(r.date()); m.setStartTime(r.startTime());
         m.setEndTime(r.endTime()); m.setVenue(r.venue()); m.setCity(r.city()); m.setMaxAttendees(r.maxAttendees());
-        m.setAgenda(r.agenda()); if (r.status() != null) m.setStatus(r.status()); return m;
+        m.setAgenda(r.agenda()); m.setStatus(m.getDate() != null && m.getDate().isBefore(today()) ? MeetupStatus.COMPLETED : MeetupStatus.UPCOMING); return m;
+    }
+    private LocalDate today() { return LocalDate.now(ZoneId.of("Asia/Kolkata")); }
+    private void completePastMeetups() {
+        List<Meetup> past = meetups.findByStatusAndDateBefore(MeetupStatus.UPCOMING, today());
+        past.forEach(meetup -> meetup.setStatus(MeetupStatus.COMPLETED));
+        if (!past.isEmpty()) meetups.saveAll(past);
     }
     public record MeetupRequest(@NotBlank String title, String description, LocalDate date, LocalTime startTime, LocalTime endTime,
                                 String venue, String city, Integer maxAttendees, String agenda, MeetupStatus status) {}

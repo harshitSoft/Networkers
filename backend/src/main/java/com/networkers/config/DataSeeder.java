@@ -30,8 +30,31 @@ public class DataSeeder {
     }
 
     private void normalizeLegacyEnumColumns(JdbcTemplate jdbc) {
-        jdbc.execute("alter table users modify role varchar(30)");
-        jdbc.execute("alter table referral modify status varchar(30)");
+        // MySQL versions (use these when the MySQL datasource is active):
+        // jdbc.execute("alter table users modify role varchar(30)");
+        // jdbc.execute("alter table referral modify status varchar(30)");
+
+        // PostgreSQL / Neon versions:
+        jdbc.execute("alter table users alter column role type varchar(30) using role::text");
+        jdbc.execute("alter table referral alter column status type varchar(30) using status::text");
+        migratePostgresLargeObjectText(jdbc, "users", "profile_image");
+        migratePostgresLargeObjectText(jdbc, "chapter", "banner_image");
+        migratePostgresLargeObjectText(jdbc, "event_image", "image_url");
+        // Hibernate may have converted an OID to its numeric identifier before
+        // this runner executes. Numeric identifiers are not usable image URLs.
+        jdbc.execute("update users set profile_image = null where profile_image ~ '^[0-9]+$'");
+        jdbc.execute("update chapter set banner_image = null where banner_image ~ '^[0-9]+$'");
+        jdbc.execute("update event_image set image_url = null where image_url ~ '^[0-9]+$'");
+    }
+
+    private void migratePostgresLargeObjectText(JdbcTemplate jdbc, String table, String column) {
+        Integer oidColumn = jdbc.queryForObject(
+                "select count(*) from information_schema.columns where table_schema = current_schema() and table_name = ? and column_name = ? and udt_name = 'oid'",
+                Integer.class, table, column);
+        if (oidColumn != null && oidColumn > 0) {
+            jdbc.execute("alter table " + table + " alter column " + column
+                    + " type text using null::text");
+        }
     }
 
     private void migrateLegacyRoles(UserRepository users) {

@@ -30,7 +30,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/password/forgot/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/join-requests").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/chapters", "/api/chapters/**", "/api/events", "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/meetups").permitAll()
                         .requestMatchers("/api/admin/**", "/api/meetups/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")

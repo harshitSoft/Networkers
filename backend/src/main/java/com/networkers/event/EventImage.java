@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class EventImage {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @ManyToOne(optional = false) @JsonIgnore private Event event;
-    @Column(length = 1000) private String imageUrl;
+    @Column(columnDefinition = "TEXT") private String imageUrl;
     private LocalDateTime createdAt;
 
     @PrePersist void onCreate() { createdAt = LocalDateTime.now(); }

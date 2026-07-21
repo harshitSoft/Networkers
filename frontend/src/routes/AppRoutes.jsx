@@ -8,8 +8,10 @@ import PublicChapters from "../pages/public/PublicChapters.jsx";
 import PublicEvents from "../pages/public/PublicEvents.jsx";
 import GalleryPage from "../pages/public/GalleryPage.jsx";
 import Login from "../pages/auth/Login.jsx";
+import JoinRequestPage from "../pages/public/JoinRequestPage.jsx";
 import Profile from "../pages/auth/Profile.jsx";
 import Dashboard from "../pages/dashboard/Dashboard.jsx";
+import PublicDashboard from "../pages/dashboard/PublicDashboard.jsx";
 import BusinessProfile from "../pages/business/BusinessProfile.jsx";
 import BusinessDirectory from "../pages/business/BusinessDirectory.jsx";
 import BusinessDetails from "../pages/business/BusinessDetails.jsx";
@@ -36,6 +38,7 @@ import ManageBusinesses from "../pages/admin/ManageBusinesses.jsx";
 import ManageMeetups from "../pages/admin/ManageMeetups.jsx";
 import EditMeetup from "../pages/admin/EditMeetup.jsx";
 import ReferralAnalytics from "../pages/admin/ReferralAnalytics.jsx";
+import ManageMonthlyMeetings from "../pages/admin/ManageMonthlyMeetings.jsx";
 
 export default function AppRoutes() {
   return (
@@ -47,13 +50,14 @@ export default function AppRoutes() {
       <Route path="/events" element={<PublicEvents />} />
       <Route path="/gallery" element={<GalleryPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/join" element={<JoinRequestPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/public-dashboard" element={<PublicDashboard />} />
           <Route path="/business/profile" element={<BusinessProfile />} />
           <Route path="/business/directory" element={<BusinessDirectory />} />
           <Route path="/businesses" element={<BusinessDirectory />} />
-          <Route path="/members" element={<BusinessDirectory />} />
           <Route path="/business/:id" element={<BusinessDetails />} />
           <Route path="/businesses/:id" element={<BusinessDetails />} />
           <Route path="/connections" element={<MyNetwork />} />
@@ -87,6 +91,7 @@ export default function AppRoutes() {
           <Route path="/admin/referrals" element={<AdminReferrals />} />
           <Route path="/admin/revenue-analytics" element={<ReferralAnalytics />} />
           <Route path="/admin/analytics" element={<ReferralAnalytics />} />
+          <Route path="/admin/monthly-meetings" element={<ManageMonthlyMeetings />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

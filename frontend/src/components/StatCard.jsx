@@ -1,15 +1,5 @@
 import GlowCard from "./ui/GlowCard.jsx";
 
-export default function StatCard({ label, value, icon: Icon }) {
-  return (
-    <GlowCard>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-          <p className="mt-2 break-words text-3xl font-black text-[#1A1A1A]">{value ?? 0}</p>
-        </div>
-        {Icon && <Icon className="h-11 w-11 shrink-0 rounded-2xl bg-red-50 p-2.5 text-red-700" />}
-      </div>
-    </GlowCard>
-  );
+export default function StatCard({label,value,icon:Icon}){
+  return <GlowCard className="metric-card h-full"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#888]">{label}</p><p className="metric-value font-data mt-4 whitespace-nowrap font-bold text-white">{value??0}</p><div className="mt-5 flex items-center gap-2 text-xs text-[#b3b3b3]"><span className="text-[#ff1e1e]">▲</span><span>Live overview</span></div></div>{Icon&&<span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-red-500/25 bg-red-500/10 text-red-400 shadow-[0_0_22px_rgba(225,6,0,.12)]"><Icon size={21}/></span>}</div><svg className="mt-5 h-8 w-full opacity-60" viewBox="0 0 160 32" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 C20 28 28 10 48 16 S76 25 92 13 S122 8 160 3" fill="none" stroke="#E10600" strokeWidth="2"/><path d="M0 25 C20 28 28 10 48 16 S76 25 92 13 S122 8 160 3 V32 H0Z" fill="url(#metricFill)"/><defs><linearGradient id="metricFill" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#E10600" stopOpacity=".28"/><stop offset="1" stopColor="#E10600" stopOpacity="0"/></linearGradient></defs></svg></GlowCard>
 }

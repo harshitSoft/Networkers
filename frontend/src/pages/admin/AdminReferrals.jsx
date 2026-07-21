@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { adminApi } from "../../api/adminApi";
 import { chapterApi } from "../../api/chapterApi";
 import EmptyState from "../../components/EmptyState.jsx";
+import { Pagination } from "./ManageUsers.jsx";
 
 export default function AdminReferrals() {
   const [items, setItems] = useState([]);
   const [chapters, setChapters] = useState([]);
   const [filters, setFilters] = useState({ status: "", chapter: "", search: "", month: "" });
+  const [page, setPage] = useState(1);
   useEffect(() => {
     adminApi.referrals().then((data) => setItems(Array.isArray(data) ? data : [])).catch(() => setItems([]));
     chapterApi.all().then(setChapters).catch(() => setChapters([]));
@@ -17,6 +19,9 @@ export default function AdminReferrals() {
     const monthMatch = !filters.month || String(r.createdAt || "").startsWith(filters.month);
     return (!filters.status || r.status === filters.status) && chapterMatch && (!filters.search || searchText.includes(filters.search.toLowerCase())) && monthMatch;
   }), [items, filters]);
+  useEffect(() => { setPage(1); }, [filters]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / 10));
+  const visible = filtered.slice((page - 1) * 10, page * 10);
   return (
     <div className="space-y-5">
       <div><h2 className="text-2xl font-black">Admin Referrals</h2><p className="mt-1 text-sm text-slate-500">View and manage referral records across chapters.</p></div>
@@ -36,12 +41,13 @@ export default function AdminReferrals() {
         {filtered.length > 0 ? (
           <table className="min-w-[980px] w-full text-left text-sm">
             <thead className="bg-red-50 text-xs uppercase text-red-800"><tr>{["ID", "Giver", "Receiver", "Work", "Client", "Estimated", "Status", "Confirmed", "Created"].map((h) => <th className="p-3" key={h}>{h}</th>)}</tr></thead>
-            <tbody>{filtered.map((r) => <tr className="border-t align-top" key={r.id}>
+            <tbody>{visible.map((r) => <tr className="border-t align-top" key={r.id}>
               <td className="p-3 font-bold">#{r.id}</td><td className="p-3">{r.givenBy?.fullName || "-"}</td><td className="p-3">{r.receivedBy?.fullName || "-"}</td><td className="p-3">{r.workTitle || r.workName || "-"}</td><td className="p-3">{r.clientName}</td><td className="p-3">Rs {Number(r.estimatedPrice || r.estimatedBudget || 0).toLocaleString("en-IN")}</td><td className="p-3">{r.status}</td><td className="p-3">Rs {Number(r.confirmedAmount || 0).toLocaleString("en-IN")}</td><td className="p-3">{String(r.createdAt || "").slice(0, 10)}</td>
             </tr>)}</tbody>
           </table>
         ) : <div className="p-5"><EmptyState title="No referrals found" message="Referral records will appear here." /></div>}
       </div>
+      {filtered.length > 10 && <Pagination page={page} pageCount={pageCount} onPage={setPage} />}
     </div>
   );
 }

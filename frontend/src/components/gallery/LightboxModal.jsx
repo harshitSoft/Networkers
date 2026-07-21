@@ -21,10 +21,10 @@ export default function LightboxModal({ item, onClose, onPrevious, onNext }) {
           <X size={22} />
         </button>
         <img src={item.image} alt={item.title} className="max-h-[78vh] w-full rounded-2xl object-contain shadow-2xl" />
-        <div className="mt-4 rounded-2xl bg-white/95 p-4 text-[#1A1A1A]">
+        <div className="glass-card mt-4 rounded-2xl p-4 text-white">
           <p className="text-xs font-black uppercase text-red-700">{item.category}</p>
           <h3 className="mt-1 text-xl font-black">{item.title}</h3>
-          <p className="text-sm font-semibold text-slate-500">{item.date}</p>
+          <p className="text-sm font-semibold text-[#888]">{item.date}</p>
         </div>
         <button type="button" aria-label="Previous image" className="absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-red-700 transition hover:bg-red-50" onClick={onPrevious}>
           <ChevronLeft size={24} />

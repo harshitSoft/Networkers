@@ -10,5 +10,8 @@ export const adminApi = {
   businesses: () => api.get("/admin/businesses").then(unwrap),
   verify: (id) => api.put(`/admin/businesses/${id}/verify`).then(unwrap),
   referrals: () => api.get("/admin/referrals").then(unwrap),
-  analytics: () => api.get("/admin/analytics").then(unwrap)
+  analytics: () => api.get("/admin/analytics").then(unwrap),
+  joinRequests: () => api.get("/admin/join-requests").then(unwrap),
+  acceptJoinRequest: (id) => api.put(`/admin/join-requests/${id}/accept`).then(unwrap),
+  rejectJoinRequest: (id) => api.put(`/admin/join-requests/${id}/reject`).then(unwrap)
 };

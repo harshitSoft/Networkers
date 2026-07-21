@@ -7,6 +7,7 @@ import java.util.Optional;
 public interface ChapterRepository extends JpaRepository<Chapter, Long> {
     Optional<Chapter> findByChapterName(String chapterName);
     boolean existsByChapterNumber(Integer chapterNumber);
+    Optional<Chapter> findByChapterNumber(Integer chapterNumber);
     List<Chapter> findByActiveTrueOrderByChapterNumberAsc();
     List<Chapter> findAllByOrderByChapterNumberAsc();
 }

@@ -4,7 +4,6 @@ import { MapPin, UserRound } from "lucide-react";
 import { businessApi } from "../../api/businessApi";
 import { connectionApi } from "../../api/connectionApi";
 import EmptyState from "../../components/EmptyState.jsx";
-import Loader from "../../components/Loader.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 
 const tabs = [
@@ -52,8 +51,6 @@ export default function MyNetwork() {
     load();
   }
 
-  if (loading) return <Loader />;
-
   const profilesByUser = new Map(data.profiles.map((profile) => [profile.user?.id, profile]));
   const items = data[active];
 
@@ -92,7 +89,7 @@ export default function MyNetwork() {
         })}
       </div>
 
-      {items.length === 0 && (
+      {!loading && items.length === 0 && (
         <EmptyState
           title={active === "network" ? "No connected businesses yet" : active === "received" ? "No connection requests" : "No pending requests"}
           message={active === "network" ? "Find business owners and add them to your trusted network." : "Requests will appear here when there is activity."}

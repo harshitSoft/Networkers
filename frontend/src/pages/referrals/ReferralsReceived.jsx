@@ -12,6 +12,7 @@ export default function ReferralsReceived() {
   const [items, setItems] = useState([]);
   const [completeTarget, setCompleteTarget] = useState(null);
   const [completeForm, setCompleteForm] = useState({ confirmedAmount: "", note: "" });
+  const [updatingId, setUpdatingId] = useState(null);
   const load = () => referralApi.received().then((data) => setItems(Array.isArray(data) ? data : [])).catch(() => setItems([]));
   useEffect(() => { load(); }, []);
   async function update(referral, status) {
@@ -20,21 +21,35 @@ export default function ReferralsReceived() {
       setCompleteForm({ confirmedAmount: referral.confirmedAmount || referral.estimatedPrice || referral.estimatedBudget || "", note: "" });
       return;
     }
-    await referralApi.status(referral.id, status);
-    toast.success("Referral updated");
-    load();
+    setUpdatingId(referral.id);
+    try {
+      await referralApi.status(referral.id, status);
+      toast.success(status === "LOST" ? "Referral marked as lost" : "Referral updated");
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not update referral status");
+    } finally {
+      setUpdatingId(null);
+    }
   }
   async function complete(e) {
     e.preventDefault();
-    await referralApi.status(completeTarget.id, "COMPLETED", Number(completeForm.confirmedAmount || 0));
-    toast.success("Referral completed");
-    setCompleteTarget(null);
-    load();
+    setUpdatingId(completeTarget.id);
+    try {
+      await referralApi.status(completeTarget.id, "COMPLETED", Number(completeForm.confirmedAmount));
+      toast.success("Referral completed and success story posted");
+      setCompleteTarget(null);
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not complete referral");
+    } finally {
+      setUpdatingId(null);
+    }
   }
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Referral inbox</p><h2 className="mt-1 page-title">Referrals <span className="text-[#E8262A]">Received</span></h2></div>
-      {items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} />} />)}
+      {items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} updating={updatingId === r.id} />} />)}
       {items.length === 0 && <EmptyState title="No referrals received" message="Referral requests assigned to you will appear here." />}
       {completeTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">
@@ -47,7 +62,7 @@ export default function ReferralsReceived() {
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" className="btn-muted" onClick={() => setCompleteTarget(null)}>Cancel</button>
-              <button className="btn-primary">Complete Referral</button>
+              <button disabled={updatingId === completeTarget.id} className="btn-primary">{updatingId === completeTarget.id ? "Completing..." : "Complete Referral"}</button>
             </div>
           </form>
         </div>
@@ -56,10 +71,11 @@ export default function ReferralsReceived() {
   );
 }
 
-function StatusFlow({ referral, onStep }) {
+function StatusFlow({ referral, onStep, updating }) {
   const currentIndex = flow.indexOf(referral.status);
   const declined = referral.status === "DECLINED";
   const canDecline = referral.status === "NEW";
+  const canMarkLost = ["NEW", "ACCEPTED", "IN_DISCUSSION"].includes(referral.status);
   return (
     <div className="mt-5">
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -69,26 +85,30 @@ function StatusFlow({ referral, onStep }) {
           const clickable = !declined && index === currentIndex + 1;
           const isFirstAccept = referral.status === "NEW" && step === "ACCEPTED";
           return (
-            <button key={step} disabled={!clickable && !isFirstAccept} onClick={() => onStep(referral, step)} className={`flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-black transition ${current ? "border-red-700 bg-red-700 text-white" : complete ? "border-red-200 bg-red-50 text-red-700" : clickable || isFirstAccept ? "border-red-300 bg-white text-red-700 hover:bg-red-50" : "border-slate-200 bg-slate-50 text-slate-400"}`}>
+            <button key={step} disabled={updating || (!clickable && !isFirstAccept)} onClick={() => onStep(referral, step)} className={`flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-black transition ${current ? "border-red-700 bg-red-700 text-white" : complete ? "border-red-200 bg-red-50 text-red-700" : clickable || isFirstAccept ? "border-red-300 bg-white text-red-700 hover:bg-red-50" : "border-slate-200 bg-slate-50 text-slate-400"}`}>
               {complete ? <CheckCircle2 size={15} /> : <Circle size={15} />} {labels[step]}
             </button>
           );
         })}
       </div>
-      {canDecline && <button className="btn-muted mt-3 text-red-700 hover:bg-red-50" onClick={() => onStep(referral, "DECLINED")}>Decline</button>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {canDecline && <button disabled={updating} className="btn-muted text-red-700 hover:bg-red-50" onClick={() => onStep(referral, "DECLINED")}>Decline</button>}
+        {canMarkLost && <button disabled={updating} className="btn-muted text-slate-700 hover:bg-slate-100" onClick={() => onStep(referral, "LOST")}>Mark as Lost</button>}
+      </div>
       {declined && <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Declined</span>}
+      {referral.status === "LOST" && <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Lost</span>}
     </div>
   );
 }
 
-export function ReferralPanel({ referral, actions }) {
+export function ReferralPanel({ referral, actions, counterpartLabel = "Given by", counterpart = referral.givenBy }) {
   return (
     <GlowCard as="article">
       <div>
         <p className="text-sm font-black uppercase text-red-700">{referral.status}</p>
         <h3 className="mt-1 text-xl font-black">{referral.workTitle || referral.workName || referral.clientName}</h3>
         <p className="mt-1 text-sm text-slate-600">Client: {referral.clientName} | {referral.clientPhone} {referral.clientEmail ? `| ${referral.clientEmail}` : ""}</p>
-        <p className="mt-1 text-sm text-slate-600">Given by: {referral.givenBy?.fullName} | {referral.givenBy?.businessName} | {referral.givenBy?.chapter?.chapterName}</p>
+        <p className="mt-1 text-sm text-slate-600">{counterpartLabel}: {counterpart?.fullName || "Unknown member"} | {counterpart?.businessName || "Business not specified"} | {counterpart?.chapter?.chapterName || "No chapter"}</p>
         <p className="mt-3 leading-7 text-slate-600">{referral.description || referral.requirement}</p>
         <p className="mt-2 text-sm font-semibold text-slate-700">{referral.workCategory || referral.productOrServiceRequired} | {referral.location}</p>
         <p className="mt-2 text-sm font-semibold text-slate-700">Estimated: Rs {Number(referral.estimatedPrice || referral.estimatedBudget || 0).toLocaleString("en-IN")} {referral.confirmedAmount ? `| Confirmed: Rs ${Number(referral.confirmedAmount).toLocaleString("en-IN")}` : ""}</p>

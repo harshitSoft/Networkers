@@ -1,26 +1,30 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { meetingApi } from "../../api/meetingApi";
-import { businessApi } from "../../api/businessApi";
+import { CalendarDays, Crown, MapPin, MessageCircle, Users } from "lucide-react";
+import { monthlyMeetingApi } from "../../api/meetingApi";
 import EmptyState from "../../components/EmptyState.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-export default function MyMeetings() {
-  const [data, setData] = useState({ received: [], sent: [], businesses: [] });
-  const [form, setForm] = useState({});
-  const load = () => Promise.allSettled([meetingApi.received(), meetingApi.sent(), businessApi.all()]).then(([received, sent, businesses]) => setData({
-    received: received.status === "fulfilled" && Array.isArray(received.value) ? received.value : [],
-    sent: sent.status === "fulfilled" && Array.isArray(sent.value) ? sent.value : [],
-    businesses: businesses.status === "fulfilled" && Array.isArray(businesses.value) ? businesses.value : []
-  }));
-  useEffect(() => { load(); }, []);
-  async function submit(e) { e.preventDefault(); await meetingApi.request(form); toast.success("Meeting requested"); setForm({}); load(); }
-  async function action(id, name) { await meetingApi[name](id); toast.success("Meeting updated"); load(); }
-  return <div className="grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
-    <form onSubmit={submit} className="card space-y-3 p-5"><h2 className="text-xl font-black">Request Meeting</h2><select className="field" value={form.receiverId || ""} onChange={(e) => setForm({ ...form, receiverId: Number(e.target.value) })}><option value="">Select owner</option>{data.businesses.map((b) => <option key={b.id} value={b.user?.id}>{b.ownerName || b.user?.fullName || "Business owner"} - {b.businessName}</option>)}</select><input className="field" type="date" onChange={(e) => setForm({ ...form, meetingDate: e.target.value })} /><input className="field" type="time" onChange={(e) => setForm({ ...form, meetingTime: e.target.value })} /><input className="field" placeholder="Purpose" value={form.purpose || ""} onChange={(e) => setForm({ ...form, purpose: e.target.value })} /><button className="btn-primary">Send request</button></form>
-    <div className="space-y-4"><MeetingList title="Received" items={data.received} action={action} /><MeetingList title="Sent" items={data.sent} /></div>
-  </div>;
+export default function MyMeetings(){
+  const{user}=useAuth();const navigate=useNavigate();const[month,setMonth]=useState(new Date().toISOString().slice(0,7));const[monthly,setMonthly]=useState(null);const[error,setError]=useState("");const[edit,setEdit]=useState(null);const[comment,setComment]=useState("");
+  const load=()=>monthlyMeetingApi.mine(month).then(v=>{setMonthly(v);setError("")}).catch(e=>{setMonthly(null);setError(e.response?.data?.message||"No monthly group has been generated yet.")});
+  useEffect(()=>{load()},[month]);
+  async function save(e){e.preventDefault();try{await monthlyMeetingApi.edit(monthly.id,edit);setEdit(null);toast.success("Meeting details updated");load()}catch(e){toast.error(e.response?.data?.message||"Could not update meeting")}}
+  async function postComment(e){e.preventDefault();if(!comment.trim())return;try{await monthlyMeetingApi.comment(monthly.id,comment);setComment("");load()}catch(e){toast.error(e.response?.data?.message||"Could not comment")}}
+  async function outcome(status){try{await monthlyMeetingApi.edit(monthly.id,{status});toast.success(`Meeting marked ${status.toLowerCase()}`);if(status==="COMPLETED")navigate(`/community?meetingId=${monthly.id}`);else load()}catch(e){toast.error(e.response?.data?.message||"Outcome can be updated from the day after the meeting")}}
+  const isHost=monthly?.host.id===user?.id;const nextDay=monthly?new Date(`${monthly.date}T00:00:00`):null;if(nextDay)nextDay.setDate(nextDay.getDate()+1);const canReport=isHost&&nextDay&&new Date()>=nextDay&&!["COMPLETED","INCOMPLETE"].includes(monthly.status);
+  return <div className="space-y-6"><header><p className="page-kicker">Automated chapter networking</p><h1 className="mt-1 page-title">Your Monthly <span className="text-brand-accent">Meeting</span></h1><p className="mt-2 text-sm text-brand-muted">A fresh randomized group and host are assigned automatically every month.</p><input aria-label="Meeting month" className="field mt-4 max-w-[210px]" type="month" value={month} onChange={e=>setMonth(e.target.value)}/></header>
+    {!monthly?<EmptyState title="Monthly meeting unavailable" message={error}/>:<section className="glass-card rounded-3xl p-5 md:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="status-pill">Group {monthly.groupNumber}</span><h2 className="mt-4 flex items-center gap-2 text-2xl font-bold"><Crown className="text-brand-accent" size={21}/>{monthly.host.name}</h2><p className="text-sm text-brand-muted">Host · {monthly.chapterName}</p></div><span className="status-pill">{monthly.status}</span></div>
+      <div className="mt-6 grid gap-3 md:grid-cols-3"><Info icon={CalendarDays} label="Date and time" value={`${monthly.date} · ${monthly.time}`}/><Info icon={MapPin} label="Venue" value={monthly.venue||"Not decided by host"}/><Info icon={Users} label="Group size" value={`${monthly.members.length} members`}/></div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{monthly.members.map(m=><div className="flex items-center gap-3 rounded-2xl bg-brand-panel p-3" key={m.id}><Avatar member={m}/><div><p className="font-bold">{m.name}</p><p className="text-xs text-brand-muted">{m.businessName||"Member"}{m.id===monthly.host.id?" · Host":""}</p></div></div>)}</div>
+      {isHost&&monthly.editCount<monthly.maxEdits&&<button className="btn-primary mt-6" onClick={()=>setEdit({date:monthly.date,time:monthly.time,venue:monthly.venue||""})}>Edit schedule ({monthly.maxEdits-monthly.editCount} remaining)</button>}
+      {isHost&&monthly.editCount>=monthly.maxEdits&&<p className="mt-5 text-sm text-brand-muted">The two schedule edits have been used.</p>}
+      {edit&&<form onSubmit={save} className="mt-5 grid gap-3 rounded-2xl border border-brand-border/20 bg-brand-panel p-4 md:grid-cols-2"><input required className="field" type="date" value={edit.date} onChange={e=>setEdit({...edit,date:e.target.value})}/><input required className="field" type="time" value={edit.time} onChange={e=>setEdit({...edit,time:e.target.value})}/><input className="field md:col-span-2" placeholder="Venue" value={edit.venue} onChange={e=>setEdit({...edit,venue:e.target.value})}/><div className="flex gap-2"><button className="btn-primary">Save changes</button><button type="button" className="btn-muted" onClick={()=>setEdit(null)}>Cancel</button></div></form>}
+      {canReport&&<div className="mt-7 rounded-2xl border border-red-500/25 bg-red-500/5 p-5"><h3 className="font-bold">Host meeting report required</h3><p className="mt-1 text-sm text-brand-muted">Confirm the outcome. Completed meetings continue to the feed where a photo or video post is required.</p><div className="mt-4 flex flex-wrap gap-2"><button className="btn-primary" onClick={()=>outcome("COMPLETED")}>Completed — create post</button><button className="btn-muted" onClick={()=>outcome("INCOMPLETE")}>Meeting incomplete</button></div></div>}
+      <div className="mt-8 border-t border-brand-border/20 pt-6"><h3 className="flex items-center gap-2 text-lg font-bold"><MessageCircle className="text-brand-accent" size={18}/>Group discussion</h3><div className="mt-4 space-y-3">{monthly.comments.map(c=><div className="rounded-2xl bg-brand-panel p-4" key={c.id}><p className="text-sm font-bold">{c.authorName}</p><p className="mt-1 text-sm text-brand-muted">{c.text}</p></div>)}</div><form onSubmit={postComment} className="mt-4 flex gap-2"><input className="field" placeholder="Comment for your group..." value={comment} onChange={e=>setComment(e.target.value)}/><button className="btn-primary">Post</button></form></div>
+    </section>}
+  </div>
 }
-
-function MeetingList({ title, items, action }) {
-  return <section className="card p-5"><h2 className="text-xl font-black">{title}</h2><div className="mt-3 space-y-2">{items.map((m) => <div key={m.id} className="rounded-lg border p-3"><p className="font-bold">{m.requester?.fullName || "Member"} to {m.receiver?.fullName || "Member"}</p><p className="text-sm text-slate-500">{m.purpose} - {m.status}</p>{action && m.status === "PENDING" && <div className="mt-2 flex gap-2"><button className="btn-primary" onClick={() => action(m.id, "accept")}>Accept</button><button className="btn-muted" onClick={() => action(m.id, "reject")}>Reject</button></div>}</div>)}</div>{items.length === 0 && <EmptyState title={`No ${title.toLowerCase()} meetings`} message="Meeting requests with business owners will appear here." />}</section>;
-}
+function Info({icon:Icon,label,value}){return <div className="rounded-2xl border border-brand-border/15 bg-brand-panel p-4"><Icon className="text-brand-accent" size={18}/><p className="mt-3 text-xs uppercase tracking-wider text-brand-muted">{label}</p><p className="mt-1 font-bold">{value}</p></div>}
+function Avatar({member}){return <div className="h-11 w-11 overflow-hidden rounded-full bg-brand-base">{member.avatar?<img className="h-full w-full object-cover" src={member.avatar} alt={member.name}/>:<span className="grid h-full place-items-center font-bold text-brand-accent">{member.name?.[0]}</span>}</div>}

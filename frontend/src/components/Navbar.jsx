@@ -1,31 +1,3 @@
-import { Bell, LogOut, Menu } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-
-export default function Navbar({ onMenuClick }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  return (
-    <header className="sticky top-0 z-20 border-b border-red-100 bg-white/95 px-4 py-3 backdrop-blur">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <button aria-label="Open dashboard menu" className="btn-muted px-3 lg:hidden" onClick={onMenuClick}><Menu size={18} /></button>
-            <div>
-              <p className="text-xs font-semibold uppercase text-red-700">Networkers</p>
-              <h1 className="text-base font-bold text-[#1A1A1A] sm:text-lg">Chapter referral workspace</h1>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/notifications" className="btn-muted px-3"><Bell size={17} /></Link>
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-bold text-slate-900">{user?.fullName}</p>
-            <p className="text-xs text-slate-500">{user?.role}</p>
-          </div>
-          <button className="btn-muted px-3" onClick={() => { logout(); navigate("/"); }}><LogOut size={17} /></button>
-        </div>
-      </div>
-    </header>
-  );
-}
+import { Bell,LogOut,Menu,Moon,Search,Sun } from "lucide-react"; import { Link,useLocation,useNavigate } from "react-router-dom"; import { useAuth } from "../context/AuthContext.jsx"; import { useTheme } from "../context/ThemeContext.jsx";
+const titles={dashboard:"My Analytics","public-dashboard":"Community Dashboard",community:"Community Stories",admin:"Admin Analytics",users:"Users",chapters:"Chapters",events:"Events",profile:"Profile",received:"Referrals Received",given:"Referrals Given"};
+export default function Navbar({onMenuClick}){const{user,logout}=useAuth();const{theme,toggleTheme}=useTheme();const navigate=useNavigate();const location=useLocation();const segment=location.pathname.split("/").filter(Boolean).at(-1)||"dashboard";const title=titles[segment]||segment.replaceAll("-"," ");return <header className="dashboard-header sticky top-0 z-30 px-3 py-3 sm:px-6"><div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><button aria-label="Open dashboard menu" className="glass-icon lg:hidden" onClick={onMenuClick}><Menu size={19}/></button><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#888]">Dashboard / <span className="text-red-400">{title}</span></p><h1 className="truncate text-lg font-bold capitalize text-white sm:text-xl">{title}</h1></div></div><div className="flex items-center gap-2 sm:gap-3"><label className="relative hidden md:block"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]" size={16}/><input aria-label="Global search" className="dashboard-search" placeholder="Search workspace..."/></label><button className="glass-icon" aria-label={`Switch to ${theme==="dark"?"light":"dark"} mode`} onClick={toggleTheme}>{theme==="dark"?<Sun size={18}/>:<Moon size={18}/>}</button><Link to="/notifications" className="glass-icon relative"><Bell size={18}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_#ff1e1e]"/></Link><Link to="/profile" className="h-10 w-10 overflow-hidden rounded-full border border-red-500/40 bg-red-500/10 transition hover:shadow-[0_0_20px_rgba(225,6,0,.4)]">{user?.profileImage?<img src={user.profileImage} alt={user.fullName} className="h-full w-full object-cover"/>:<span className="grid h-full place-items-center font-bold text-red-400">{user?.fullName?.[0]}</span>}</Link><button aria-label="Sign out" className="glass-icon hidden sm:grid" onClick={()=>{logout();navigate("/")}}><LogOut size={17}/></button></div></div></header>}

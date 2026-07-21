@@ -10,6 +10,7 @@ public class Chapter {
     @Column(unique = true) private Integer chapterNumber;
     private String chapterName;
     @Column(length = 2000) private String description;
+    @Column(columnDefinition = "TEXT") private String bannerImage;
     private String location;
     private String subscriptionName;
     private BigDecimal subscriptionAmount;
@@ -28,6 +29,8 @@ public class Chapter {
     public void setChapterName(String chapterName) { this.chapterName = chapterName; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getBannerImage() { return bannerImage; }
+    public void setBannerImage(String bannerImage) { this.bannerImage = bannerImage; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getSubscriptionName() { return subscriptionName; }

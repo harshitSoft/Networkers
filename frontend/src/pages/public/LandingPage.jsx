@@ -1,4 +1,197 @@
-import { useEffect,useState } from "react"; import { ArrowRight,CalendarDays,Handshake,Network,Users } from "lucide-react"; import { Link } from "react-router-dom"; import PublicNavbar from "./PublicNavbar.jsx"; import LandingFooter from "../../components/landing/LandingFooter.jsx"; import GlowCard from "../../components/ui/GlowCard.jsx"; import ScrollReveal from "../../components/ui/ScrollReveal.jsx"; import { chapterApi } from "../../api/chapterApi.js"; import { eventApi } from "../../api/eventApi.js";
-export default function LandingPage(){const[chapters,setChapters]=useState([]);const[events,setEvents]=useState([]);useEffect(()=>{chapterApi.all().then(setChapters).catch(()=>setChapters([]));eventApi.upcoming().then(setEvents).catch(()=>setEvents([]))},[]);return <div className="public-page"><PublicNavbar/><main><section className="content-shell hero-grid"><ScrollReveal><span className="status-pill">Trusted professional community</span><h1 className="hero-title mt-7">Connect.<br/>Refer.<br/><span className="hero-underline text-gradient">Grow Together.</span></h1><p className="mt-8 max-w-xl text-lg leading-8 text-[#b3b3b3]">Join an admin-managed chapter, build trusted relationships, and turn your professional network into measurable growth.</p><div className="mt-9 flex flex-wrap gap-3"><Link to="/join" className="glow-button glow-button-primary">Join now <ArrowRight size={18}/></Link><Link to="/chapters" className="glow-button glow-button-secondary">Explore chapters</Link></div></ScrollReveal><ScrollReveal direction="right"><div className="image-frame relative aspect-[4/5] rounded-[2rem]"><img className="h-full w-full object-cover" src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=85" alt="Professionals networking"/><div className="absolute bottom-6 left-6 z-10 rounded-2xl border border-white/15 bg-black/70 p-4 backdrop-blur-xl"><p className="font-data text-3xl font-bold">{chapters.reduce((sum,c)=>sum+(c.memberCount||0),0)}</p><p className="text-xs uppercase text-[#b3b3b3]">Members across {chapters.length} chapters</p></div></div></ScrollReveal></section>
-<section className="section-solid section-pad"><div className="content-shell"><div className="flex items-end justify-between"><div><p className="eyebrow">Admin-created chapters</p><h2 className="mt-3 text-4xl font-bold">Choose the chapter you want to join.</h2></div><Link to="/chapters" className="hidden text-red-400 sm:block">View all chapters →</Link></div>{chapters.length===0?<div className="glass-card mt-10 rounded-3xl p-10 text-center text-[#888]">No chapters are available yet. The admin must create one before users can join.</div>:<div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{chapters.slice(0,6).map((chapter,i)=><ScrollReveal delay={i*60} key={chapter.id}><GlowCard><div className="flex justify-between gap-3"><div><p className="font-data text-xs text-red-400">CHAPTER {chapter.chapterNumber}</p><h3 className="mt-2 text-2xl font-bold">{chapter.chapterName}</h3></div><span className="status-pill">Active</span></div><p className="mt-4 line-clamp-2 text-[#888]">{chapter.description}</p><div className="mt-5 flex justify-between text-sm"><span className="flex gap-2"><Users size={17} className="text-red-500"/>{chapter.memberCount} members</span><span>{chapter.subscriptionName}</span></div><Link to={`/join?chapter=${chapter.id}`} className="glow-button glow-button-primary mt-6 w-full">Join this chapter</Link></GlowCard></ScrollReveal>)}</div>}</div></section>
-<section className="content-shell section-pad"><p className="eyebrow">Upcoming events</p><h2 className="mt-3 text-4xl font-bold">Rooms worth showing up for.</h2>{events.length===0?<div className="glass-card mt-10 rounded-3xl p-10 text-center text-[#888]">No upcoming events have been published.</div>:<div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{events.slice(0,6).map((event,i)=><ScrollReveal delay={i*60} key={event.id}><GlowCard><div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0"><img className="h-full w-full object-cover" src={event.images?.[0]?.imageUrl||"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80"} alt={event.title}/></div><span className="status-pill">Upcoming</span><h3 className="mt-4 text-2xl font-bold">{event.title}</h3><div className="mt-4 grid gap-2 text-sm text-[#b3b3b3]"><p className="flex gap-2"><CalendarDays size={17} className="text-red-500"/>{event.eventDate} {event.eventTime&&`at ${event.eventTime}`}</p><p className="flex gap-2"><Network size={17} className="text-red-500"/>{event.location||"Venue to be announced"}</p><p className="flex gap-2"><Handshake size={17} className="text-red-500"/>{event.chapter?.chapterName||"All chapters"}</p></div><p className="mt-4 line-clamp-2 text-[#888]">{event.description}</p></GlowCard></ScrollReveal>)}</div>}<div className="mt-8 text-center"><Link to="/events" className="glow-button glow-button-secondary">View all events <ArrowRight size={17}/></Link></div></section></main><LandingFooter/></div>}
+import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Handshake,
+  Network,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import PublicNavbar from "./PublicNavbar.jsx";
+import LandingFooter from "../../components/landing/LandingFooter.jsx";
+import GlowCard from "../../components/ui/GlowCard.jsx";
+import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
+import { chapterApi } from "../../api/chapterApi.js";
+import { eventApi } from "../../api/eventApi.js";
+export default function LandingPage() {
+  const [chapters, setChapters] = useState([]);
+  const [events, setEvents] = useState([]);
+  useEffect(() => {
+    chapterApi
+      .all()
+      .then(setChapters)
+      .catch(() => setChapters([]));
+    eventApi
+      .upcoming()
+      .then(setEvents)
+      .catch(() => setEvents([]));
+  }, []);
+  return (
+    <div className="public-page">
+      <PublicNavbar />
+      <main>
+        <section className="content-shell hero-grid">
+          <ScrollReveal>
+            <span className="status-pill">Trusted professional community</span>
+            <h1 className="hero-title mt-7">
+              Connect.
+              <br />
+              Refer.
+              <br />
+              <span className="hero-underline text-gradient">
+                Grow Together.
+              </span>
+            </h1>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-[#b3b3b3]">
+              Join an admin-managed chapter, build trusted relationships, and
+              turn your professional network into measurable growth.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link to="/join" className="glow-button glow-button-primary">
+                Join now <ArrowRight size={18} />
+              </Link>
+              <Link
+                to="/chapters"
+                className="glow-button glow-button-secondary"
+              >
+                Explore chapters
+              </Link>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="right">
+            <div className="image-frame relative aspect-[4/5] rounded-[2rem]">
+              <img
+                className="h-full w-full object-cover"
+                src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=85"
+                alt="Professionals networking"
+              />
+              <div className="hero-stat absolute bottom-6 left-6 z-10 rounded-2xl border border-white/15 bg-black/70 p-4 text-white backdrop-blur-xl">
+                <p className="font-data text-3xl font-bold">
+                  {chapters.reduce((sum, c) => sum + (c.memberCount || 0), 0)}
+                </p>
+                <p className="text-xs uppercase text-neutral-300">
+                  Members across {chapters.length} chapters
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </section>
+        <section className="section-solid section-pad">
+          <div className="content-shell">
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              <div>
+                <p className="eyebrow">Admin-created chapters</p>
+                <h2 className="mt-3 text-4xl font-bold">
+                  Choose the chapter you want to join.
+                </h2>
+              </div>
+              <Link to="/chapters" className="glow-button glow-button-secondary">
+                View all chapters <ArrowRight size={17} />
+              </Link>
+            </div>
+            {chapters.length === 0 ? (
+              <div className="glass-card mt-10 rounded-3xl p-10 text-center text-[#888]">
+                No chapters are available yet. The admin must create one before
+                users can join.
+              </div>
+            ) : (
+              <div className="mt-10 grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {chapters.slice(0, 6).map((chapter, i) => (
+                  <ScrollReveal className="h-full" delay={i * 60} key={chapter.id}>
+                    <GlowCard className="h-full">
+                      <div className="flex h-full flex-col">
+                      <div className="flex justify-between gap-3">
+                        <div>
+                          <p className="font-data text-xs text-red-400">
+                            CHAPTER {chapter.chapterNumber}
+                          </p>
+                          <h3 className="mt-2 text-2xl font-bold">
+                            {chapter.chapterName}
+                          </h3>
+                        </div>
+                        <span className="status-pill self-start">Active</span>
+                      </div>
+                      <p className="mt-4 line-clamp-2 text-[#888]">
+                        {chapter.description}
+                      </p>
+                      <div className="mt-5 flex justify-between text-sm">
+                        <span className="flex gap-2">
+                          <Users size={17} className="text-red-500" />
+                          {chapter.memberCount} members
+                        </span>
+                        <span>{chapter.subscriptionName}</span>
+                      </div>
+                      <Link
+                        to={`/join?chapter=${chapter.id}`}
+                        className="glow-button glow-button-primary mt-auto !mt-6 w-full"
+                      >
+                        Join this chapter
+                      </Link>
+                      </div>
+                    </GlowCard>
+                  </ScrollReveal>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+        <section className="content-shell section-pad">
+          <p className="eyebrow">Upcoming events</p>
+          <h2 className="mt-3 text-4xl font-bold">
+            Rooms worth showing up for.
+          </h2>
+          {events.length === 0 ? (
+            <div className="glass-card mt-10 rounded-3xl p-10 text-center text-[#888]">
+              No upcoming events have been published.
+            </div>
+          ) : (
+            <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {events.slice(0, 6).map((event, i) => (
+                <ScrollReveal delay={i * 60} key={event.id}>
+                  <GlowCard>
+                    <div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0">
+                      <img
+                        className="h-full w-full object-cover"
+                        src={
+                          event.images?.[0]?.imageUrl ||
+                          "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80"
+                        }
+                        alt={event.title}
+                      />
+                    </div>
+                    <span className="status-pill">Upcoming</span>
+                    <h3 className="mt-4 text-2xl font-bold">{event.title}</h3>
+                    <div className="mt-4 grid gap-2 text-sm text-[#b3b3b3]">
+                      <p className="flex gap-2">
+                        <CalendarDays size={17} className="text-red-500" />
+                        {event.eventDate}{" "}
+                        {event.eventTime && `at ${event.eventTime}`}
+                      </p>
+                      <p className="flex gap-2">
+                        <Network size={17} className="text-red-500" />
+                        {event.location || "Venue to be announced"}
+                      </p>
+                      <p className="flex gap-2">
+                        <Handshake size={17} className="text-red-500" />
+                        {event.chapter?.chapterName || "All chapters"}
+                      </p>
+                    </div>
+                    <p className="mt-4 line-clamp-2 text-[#888]">
+                      {event.description}
+                    </p>
+                  </GlowCard>
+                </ScrollReveal>
+              ))}
+            </div>
+          )}
+          <div className="mt-8 text-center">
+            <Link to="/events" className="glow-button glow-button-secondary">
+              View all events <ArrowRight size={17} />
+            </Link>
+          </div>
+        </section>
+      </main>
+      <LandingFooter />
+    </div>
+  );
+}

@@ -153,6 +153,14 @@ html[data-theme="light"] .public-page .glow-button-secondary { background:#fff;c
 html[data-theme="light"] .public-page .glow-button-secondary:hover { background:#fff5f5;color:#e10600;box-shadow:0 0 25px rgba(225,6,0,.24); }
 html[data-theme="light"] .public-page .text-\[\#b3b3b3\],html[data-theme="light"] .public-page .text-\[\#888\] { color:#262626!important; }
 html[data-theme="light"] .public-page header.sticky { background:rgba(255,255,255,.96);color:#0a0a0a;border-color:rgba(225,6,0,.2); }
+html[data-theme="light"] .public-page .hero-stat { color:#fff!important; }
+html[data-theme="light"] .public-page .hero-stat .text-neutral-300 { color:#d4d4d4!important; }
+html[data-theme="light"] .public-page .event-tabs { background:#fff;color:#0a0a0a;border-color:rgba(225,6,0,.28);box-shadow:0 8px 24px rgba(139,0,0,.08); }
+html[data-theme="light"] .public-page .event-tabs button:not(.active) { color:#262626!important; }
+html[data-theme="light"] .public-page .event-tabs button:not(.active):hover { color:#b91c1c!important;background:#fff5f5; }
+html[data-theme="light"] .public-page .event-tabs button.active { color:#fff!important; }
+.milestone-dot { width:16px;height:16px;border:3px solid rgb(var(--bg-base));border-radius:999px;background:#e10600;box-shadow:0 0 0 5px rgba(225,6,0,.14),0 0 20px rgba(225,6,0,.65);animation:milestone-pulse 1.45s ease-in-out infinite; }
+@keyframes milestone-pulse { 0%,100%{transform:scale(.72);box-shadow:0 0 0 4px rgba(225,6,0,.1),0 0 12px rgba(225,6,0,.45)} 50%{transform:scale(1.18);box-shadow:0 0 0 7px rgba(225,6,0,.16),0 0 25px rgba(225,6,0,.8)} }
 
 /* Footer theme and admin chapter workspace. */
 .public-page footer h3 { color:#e10600!important; }

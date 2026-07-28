@@ -57,6 +57,17 @@ public class CloudinaryImageService {
         return secureUrl.toString();
     }
 
+    public String uploadPairMeetingPhoto(MultipartFile file, Long meetingId, Long userId) throws IOException {
+        if (cloudinary == null) throw new IllegalStateException("Media storage is not configured. Set the CLOUDINARY_URL environment variable.");
+        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderRoot + "/pair-meetings",
+                "public_id", "meeting-" + meetingId + "-member-" + userId + "-" + System.currentTimeMillis(),
+                "resource_type", "image"));
+        Object secureUrl = result.get("secure_url");
+        if (secureUrl == null) throw new IllegalStateException("Cloudinary did not return an image URL");
+        return secureUrl.toString();
+    }
+
     public void deleteCommunityMedia(String mediaUrl,String mediaType) throws IOException {
         if(cloudinary==null||mediaUrl==null||mediaUrl.isBlank())return;
         try{

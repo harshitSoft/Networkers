@@ -29,6 +29,7 @@ public class UserDeletionService {
         execute("delete from post_kudos where post_id in (select p.id from post p join monthly_meetings m on p.meeting_id=m.id join monthly_meeting_groups g on m.group_id=g.id where g.host_id=:id)", id);
         execute("delete from post where meeting_id in (select m.id from monthly_meetings m join monthly_meeting_groups g on m.group_id=g.id where g.host_id=:id)", id);
         execute("delete from monthly_meeting_comments where meeting_id in (select m.id from monthly_meetings m join monthly_meeting_groups g on m.group_id=g.id where g.host_id=:id)", id);
+        execute("delete from monthly_pair_meetings where meeting_id in (select m.id from monthly_meetings m join monthly_meeting_groups g on m.group_id=g.id where g.host_id=:id)", id);
         execute("delete from monthly_meeting_participants where group_id in (select id from monthly_meeting_groups where host_id=:id)", id);
         execute("delete from monthly_meetings where group_id in (select id from monthly_meeting_groups where host_id=:id)", id);
         execute("delete from monthly_meeting_groups where host_id=:id", id);
@@ -40,6 +41,7 @@ public class UserDeletionService {
         execute("delete from post where user_id=:id", id);
 
         execute("delete from monthly_meeting_comments where author_id=:id", id);
+        execute("delete from monthly_pair_meetings where member_one_id=:id or member_two_id=:id or completed_by_id=:id", id);
         execute("delete from monthly_meeting_participants where member_id=:id", id);
         execute("delete from event_rsvps where user_id=:id", id);
         execute("delete from notification where user_id=:id", id);

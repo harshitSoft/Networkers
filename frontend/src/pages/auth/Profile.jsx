@@ -1,9 +1,7 @@
 import {
-  BadgeCheck,
   Briefcase,
   KeyRound,
   Save,
-  TrendingUp,
   UserCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,8 +9,6 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
 import { businessApi } from "../../api/businessApi";
-import { referralApi } from "../../api/referralApi";
-import StatCard from "../../components/StatCard.jsx";
 const emptyBusiness = {
   businessName: "",
   ownerName: "",
@@ -47,12 +43,7 @@ export default function Profile() {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [business, setBusiness] = useState(emptyBusiness);
   const [hasBusiness, setHasBusiness] = useState(false);
-  const [summary, setSummary] = useState(null);
   useEffect(() => {
-    referralApi
-      .dashboard()
-      .then(setSummary)
-      .catch(() => setSummary(null));
     businessApi
       .my()
       .then((data) => {
@@ -293,30 +284,6 @@ export default function Profile() {
             {hasBusiness ? "Update" : "Create"} business profile
           </button>
         </ProfileForm>
-      )}
-      {summary && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Referrals Given"
-            value={summary.referralsGiven || 0}
-            icon={TrendingUp}
-          />
-          <StatCard
-            label="Referrals Received"
-            value={summary.referralsReceived || 0}
-            icon={TrendingUp}
-          />
-          <StatCard
-            label="Revenue Given"
-            value={`Rs ${Number(summary.totalBusinessGiven || 0).toLocaleString("en-IN")}`}
-            icon={TrendingUp}
-          />
-          <StatCard
-            label="Revenue Earned"
-            value={`Rs ${Number(summary.totalBusinessEarned || 0).toLocaleString("en-IN")}`}
-            icon={BadgeCheck}
-          />
-        </div>
       )}
     </div>
   );

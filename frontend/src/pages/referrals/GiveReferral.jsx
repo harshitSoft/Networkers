@@ -89,7 +89,7 @@ export default function GiveReferral() {
                 ["clientName", "Client name", true], ["clientPhone", "Client contact number", true], ["clientEmail", "Client email (optional)", false],
                 ["workTitle", "Work title", true], ["workCategory", "Business type", true], ["estimatedPrice", "Estimated price (optional)", false],
                 ["location", "Location (optional)", false]
-              ].map(([key, label, isRequired]) => <input key={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : "text"} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />)}
+              ].map(([key, label, isRequired]) => <input key={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : key === "clientEmail" ? "email" : key === "clientPhone" ? "tel" : "text"} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />)}
               <textarea className="field md:col-span-2" rows="4" placeholder="Description of work (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               <textarea className="field md:col-span-2" rows="3" placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>

@@ -195,27 +195,27 @@ pipeline {
                                 ENV="${env.ENVIRONMENT}"
                                 TAG="${env.TAG_NAME}"
                                 REPO_URL="${GIT_REPO}"
-                                WORKSPACE_DIR="\\$BASE_DIR/\\$ENV"
+                                WORKSPACE_DIR="\$BASE_DIR/\$ENV"
 
-                                mkdir -p "\\$WORKSPACE_DIR"
-                                cd "\\$WORKSPACE_DIR"
+                                mkdir -p "\$WORKSPACE_DIR"
+                                cd "\$WORKSPACE_DIR"
 
-                                echo "🔄 Cloning repository for tag: \\$TAG"
+                                echo "🔄 Cloning repository for tag: \$TAG"
 
-                                TEMP_DIR=\\$(mktemp -d)
+                                TEMP_DIR=\$(mktemp -d)
 
-                                git clone --branch "\\$TAG" --depth 1 "\\$REPO_URL" "\\$TEMP_DIR" || {
+                                git clone --branch "\$TAG" --depth 1 "\$REPO_URL" "\$TEMP_DIR" || {
                                     echo "❌ Failed to clone repository."
                                     exit 1
                                 }
 
                                 echo "🔐 Logging into AWS ECR"
 
-                                AWS_ACCOUNT_ID=\\$(aws sts get-caller-identity --query Account --output text)
+                                AWS_ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text)
 
-                                ECR_URL="\\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+                                ECR_URL="\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
 
-                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \\$ECR_URL
+                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \$ECR_URL
 
                                 if [ -z "${env.BACKEND_SECRET_KEY}" ]; then
                                     echo "❌ Backend secret key not found."
@@ -226,29 +226,29 @@ pipeline {
                                 # Blue-Green Deployment
                                 ####################################################################
 
-                                CURRENT_COLOR=\\$(docker ps \
-                                    --filter "name=networkers_backend_\\${ENV}" \
+                                CURRENT_COLOR=\$(docker ps \
+                                    --filter "name=networkers_backend_\${ENV}" \
                                     --format "{{.Names}}" \
                                     | grep -Eo "(blue|green)" \
                                     | head -n1)
 
-                                echo "Current Color : \\$CURRENT_COLOR"
+                                echo "Current Color : \$CURRENT_COLOR"
 
-                                if [ "\\$CURRENT_COLOR" = "blue" ]; then
+                                if [ "\$CURRENT_COLOR" = "blue" ]; then
 
                                     NEW_COLOR="green"
 
-                                    if [ "\\$ENV" = "staging" ]; then
+                                    if [ "\$ENV" = "staging" ]; then
                                         HOST_BACKEND_PORT=${STAGING_BACKEND_SECONDARY_PORT}
                                     else
                                         HOST_BACKEND_PORT=${BACKEND_SECONDARY_PORT}
                                     fi
 
-                                elif [ "\\$CURRENT_COLOR" = "green" ]; then
+                                elif [ "\$CURRENT_COLOR" = "green" ]; then
 
                                     NEW_COLOR="blue"
 
-                                    if [ "\\$ENV" = "staging" ]; then
+                                    if [ "\$ENV" = "staging" ]; then
                                         HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
                                     else
                                         HOST_BACKEND_PORT=${BACKEND_PORT}
@@ -260,7 +260,7 @@ pipeline {
 
                                     NEW_COLOR="blue"
 
-                                    if [ "\\$ENV" = "staging" ]; then
+                                    if [ "\$ENV" = "staging" ]; then
                                         HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
                                     else
                                         HOST_BACKEND_PORT=${BACKEND_PORT}
@@ -268,59 +268,52 @@ pipeline {
 
                                 fi
 
-                                TARGET_DIR="\\$WORKSPACE_DIR/\\$NEW_COLOR"
+                                TARGET_DIR="\$WORKSPACE_DIR/\$NEW_COLOR"
 
-                                mkdir -p "\\$TARGET_DIR"
-                                mkdir -p "\\$TARGET_DIR/backend"
+                                mkdir -p "\$TARGET_DIR"
+                                mkdir -p "\$TARGET_DIR/backend"
                                 
-                                if [ ! -f "$TEMP_DIR/deployment/compose.yml" ]; then
+                                if [ ! -f "\$TEMP_DIR/deployment/compose.yml" ]; then
                                     echo "❌ deployment/compose.yml not found."
                                     exit 1
                                 fi
 
 
-                                cp -f "\\$TEMP_DIR/deployment/compose.yml" "\\$TARGET_DIR/"
+                                cp -f "\$TEMP_DIR/deployment/compose.yml" "\$TARGET_DIR/"
 
                                 echo "🔍 Checking if backend env file exists in S3..."
 
                                 echo "🔍 Checking backend env file..."
 
                                 if ! aws s3 ls \
-                                "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
+                                "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" 
                                 --region ${AWS_REGION}; then
                                     echo "❌ Backend env file not found."
                                     exit 1
                                 fi
 
                                 echo "✅ Backend env file found."
-                                if [ $? -ne 0 ]; then
-                                    echo "❌ Backend env file not found in S3."
-                                    exit 1
-                                fi
-
-                                echo "✅ Backend env file found."
-
 
                                 echo "🔑 Downloading backend environment file..."
 
                                 aws s3 cp \
-                                    "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
-                                    "\\$TARGET_DIR/backend/.env" \
+                                    "s3:/${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
+                                    "\$TARGET_DIR/backend/.env" \
                                     --region ${AWS_REGION}
 
                                 echo "📝 Creating deployment .env"
 
-                                cat > "\\$TARGET_DIR/.env" <<EOF
-                                AWS_ACCOUNT_ID=\\$AWS_ACCOUNT_ID
+                                cat > "\$TARGET_DIR/.env" <<EOF
+                                AWS_ACCOUNT_ID=\$AWS_ACCOUNT_ID
                                 AWS_REGION=${AWS_REGION}
                                 ECR_REPOSITORY=${ECR_REPOSITORY}
                                 BACKEND_TAG=${env.BACKEND_TAG}
-                                HOST_BACKEND_PORT=\\$HOST_BACKEND_PORT
-                                COLOR=\\$NEW_COLOR
-                                ENVIRONMENT=\\$ENV
+                                HOST_BACKEND_PORT=\$HOST_BACKEND_PORT
+                                COLOR=\$NEW_COLOR
+                                ENVIRONMENT=\$ENV
                                 EOF
 
-                                cd "\\$TARGET_DIR"
+                                cd "\$TARGET_DIR"
 
                                 echo "📥 Pulling Docker image..."
 
@@ -331,14 +324,14 @@ pipeline {
 
                                 echo "✅ Docker image pulled successfully."
 
-                                rm -rf "\\$TEMP_DIR"
+                                rm -rf "\$TEMP_DIR"
 
                                 echo "====VARIABLES_START===="
-                                echo "WORKSPACE_DIR=\\$WORKSPACE_DIR"
-                                echo "CURRENT_COLOR=\\$CURRENT_COLOR"
-                                echo "NEW_COLOR=\\$NEW_COLOR"
-                                echo "HOST_BACKEND_PORT=\\$HOST_BACKEND_PORT"
-                                echo "TARGET_DIR=\\$TARGET_DIR"
+                                echo "WORKSPACE_DIR=\$WORKSPACE_DIR"
+                                echo "CURRENT_COLOR=\$CURRENT_COLOR"
+                                echo "NEW_COLOR=\$NEW_COLOR"
+                                echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT"
+                                echo "TARGET_DIR=\$TARGET_DIR"
                                 echo "====VARIABLES_END===="
                                 '
                             """,
@@ -373,8 +366,8 @@ pipeline {
                     env.TARGET_DIR        = variables.TARGET_DIR
 
                     echo "Captured Variables : ${variables}"
-                    echo "HOST_BACKEND_PORT=$HOST_BACKEND_PORT"
-                    echo "Backend URL: http://127.0.0.1:$HOST_BACKEND_PORT"
+                    echo "HOST_BACKEND_PORT=${env.HOST_BACKEND_PORT}"
+                    echo "Backend URL: http://127.0.0.1:${env.HOST_BACKEND_PORT}"
                 }
             }
         }
@@ -396,7 +389,6 @@ pipeline {
                         echo "Running containers:"
                         docker ps
 
-                        echo "Container logs (last 50 lines):"
                         docker compose \
                             -p "\$PROJECT_NAME" \
                             --env-file .env \
@@ -434,7 +426,7 @@ pipeline {
                             echo "🔍 Checking backend health at:"
                             echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}/${HEALTH_BACKEND_PATH}" 
                             BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
-                                http://127.0.0.1:${env.HOST_BACKEND_PORT}/$HEALTH_BACKEND_PATH)
+                                http://127.0.0.1:${env.HOST_BACKEND_PORT}/${HEALTH_BACKEND_PATH})
 
                             echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
 
@@ -458,17 +450,18 @@ pipeline {
                         if [ "\$ENV" = "staging" ]; then
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${STAGING_BACKEND_PORT}\\|${STAGING_BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
-                            /etc/nginx/conf.d/$NGINX_STAGING_CONF
+                            /etc/nginx/conf.d/${NGINX_STAGING_CONF}
                         else
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${BACKEND_PORT}\\|${BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
-                            /etc/nginx/conf.d/$NGINX_PRODUCTION_CONF
+                            /etc/nginx/conf.d/${NGINX_PRODUCTION_CONF}
                         fi
 
                         echo "🔍 Validating Nginx configuration..."
                         sudo nginx -t
 
                         echo "🔄 Reloading Nginx..."
+                        sudo nginx -t
                         sudo systemctl reload nginx
 
                         echo "✅ Nginx successfully switched to the new backend deployment."
@@ -510,7 +503,7 @@ pipeline {
                                 -f compose.yml \
                                 down || echo "⚠️ Failed to stop old containers."
 
-                            docker image prune -af || true
+                            docker image prune -f
 
                             echo "✅ Old backend deployment cleaned up successfully."
 
@@ -527,7 +520,7 @@ pipeline {
 
         stage('Notify & Finish') {
             steps {
-                echo "✅ Deployment successful! App is now running with tag: ${TAG_NAME}"
+                echo "✅ Deployment successful! App is now running with tag: ${env.TAG_NAME}"
             }
         }
     }

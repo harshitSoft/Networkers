@@ -4,7 +4,6 @@ import com.networkers.common.ApiResponse;
 import com.networkers.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,12 +75,16 @@ public class ChapterController {
     }
 
     private void apply(Chapter chapter, ChapterRequest request) {
+        if (request.chapterNumber() == null) throw new IllegalArgumentException("Chapter number is required");
+        if (request.chapterName() == null || request.chapterName().isBlank()) throw new IllegalArgumentException("Chapter name is required");
         chapter.setChapterNumber(request.chapterNumber());
-        chapter.setChapterName(request.chapterName());
-        chapter.setDescription(request.description());
-        chapter.setSubscriptionName(request.subscriptionName());
-        chapter.setSubscriptionAmount(request.subscriptionAmount());
+        chapter.setChapterName(request.chapterName().trim());
+        chapter.setDescription(blankToNull(request.description()));
         chapter.setActive(request.active() == null || request.active());
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private Map<String, Object> dto(Chapter chapter) {
@@ -91,8 +94,6 @@ public class ChapterController {
                 "chapterName", chapter.getChapterName() == null ? "" : chapter.getChapterName(),
                 "description", chapter.getDescription() == null ? "" : chapter.getDescription(),
                 "bannerImage", chapter.getBannerImage() == null ? "" : chapter.getBannerImage(),
-                "subscriptionName", chapter.getSubscriptionName() == null ? "" : chapter.getSubscriptionName(),
-                "subscriptionAmount", chapter.getSubscriptionAmount() == null ? BigDecimal.ZERO : chapter.getSubscriptionAmount(),
                 "active", chapter.isActive(),
                 "memberCount", users.countByChapterAndDeletedFalse(chapter));
     }
@@ -110,6 +111,5 @@ public class ChapterController {
                 "location", user.getLocation() == null ? "" : user.getLocation());
     }
 
-    public record ChapterRequest(Integer chapterNumber, String chapterName, String description,
-                                 String subscriptionName, BigDecimal subscriptionAmount, Boolean active) {}
+    public record ChapterRequest(Integer chapterNumber, String chapterName, String description, Boolean active) {}
 }

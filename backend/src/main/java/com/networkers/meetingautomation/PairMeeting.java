@@ -26,5 +26,5 @@ public class PairMeeting {
     public String getPhotoUrl(){return photoUrl;} public void setPhotoUrl(String v){photoUrl=v;}
     public User getCompletedBy(){return completedBy;} public void setCompletedBy(User v){completedBy=v;}
     public LocalDateTime getCompletedAt(){return completedAt;} public void setCompletedAt(LocalDateTime v){completedAt=v;}
-    public boolean isCompleted(){return metOn!=null&&photoUrl!=null&&!photoUrl.isBlank();}
+    public boolean isCompleted(){return metOn!=null;}
 }

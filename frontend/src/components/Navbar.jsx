@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import LogoutButton from "./LogoutButton.jsx";
 
-const titles = { dashboard: "My Analytics", "public-dashboard": "Community Dashboard", community: "Community Stories", admin: "Admin Analytics", users: "Users", chapters: "Chapters", events: "Events", profile: "Profile", received: "Referrals Received", given: "Referrals Given" };
+const titles = { dashboard: "My Analytics", "public-dashboard": "Community Dashboard", community: "Community Stories", admin: "Admin Analytics", users: "Users", chapters: "Chapters", events: "Events", meetings: "Face to Face", "monthly-meetings": "Face to Face", profile: "Profile", received: "Referrals Received", given: "Referrals Given" };
 
 export default function Navbar({ onMenuClick }) {
   const { user } = useAuth();

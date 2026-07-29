@@ -3,8 +3,8 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import LogoutButton from "./LogoutButton.jsx";
 
-export const userLinks = [["/community","Community Stories",Newspaper],["/public-dashboard","Community Dashboard",BarChart3],["/dashboard","My Analytics",Home],["/give-referral","Give Referral",Send],["/referrals/received","Referrals Received",Handshake],["/referrals/given","Referrals Given",Send],["/meetings","Monthly Meeting",CalendarDays],["/user/chapters","Browse Chapters",Network],["/user/events","Chapter Events",CalendarDays],["/profile","Profile",UserCircle]];
-export const adminLinks = [["/admin","Command Center",Shield],["/admin/users/create","Create User",Users],["/admin/chapters","Chapters",Network],["/admin/events","Events",CalendarDays],["/admin/monthly-meetings","Monthly Meetings",CalendarDays],["/admin/referrals","Referrals",Handshake],["/admin/revenue-analytics","Analytics",BarChart3],["/profile","My Profile",UserCircle]];
+export const userLinks = [["/community","Community Stories",Newspaper],["/public-dashboard","Community Dashboard",BarChart3],["/dashboard","My Analytics",Home],["/give-referral","Give Referral",Send],["/referrals/received","Referrals Received",Handshake],["/referrals/given","Referrals Given",Send],["/meetings","Face to Face",CalendarDays],["/user/chapters","Chapters",Network],["/user/events","Chapter Events",CalendarDays],["/profile","Profile",UserCircle]];
+export const adminLinks = [["/admin","Command Center",Shield],["/admin/users/create","Create User",Users],["/admin/chapters","Chapters",Network],["/admin/events","Events",CalendarDays],["/admin/monthly-meetings","Face to Face",CalendarDays],["/admin/referrals","Referrals",Handshake],["/admin/revenue-analytics","Analytics",BarChart3],["/profile","My Profile",UserCircle]];
 
 export default function Sidebar({ mobile = false, open = false, onClose }) {
   const { isAdmin, user } = useAuth();

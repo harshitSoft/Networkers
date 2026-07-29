@@ -3,6 +3,7 @@ export const adminApi = {
   dashboard: () => api.get("/admin/dashboard").then(unwrap),
   users: () => api.get("/admin/users").then(unwrap),
   createUser: (payload) => api.post("/admin/users/create", payload).then(unwrap),
+  sendCredentials: (id, password) => api.post(`/admin/users/${id}/send-credentials`, { password }).then(unwrap),
   updateUser: (id, payload) => api.put(`/admin/users/${id}`, payload).then(unwrap),
   block: (id) => api.put(`/admin/users/${id}/block`).then(unwrap),
   unblock: (id) => api.put(`/admin/users/${id}/unblock`).then(unwrap),

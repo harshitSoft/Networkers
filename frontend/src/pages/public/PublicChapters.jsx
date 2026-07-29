@@ -81,30 +81,19 @@ export default function PublicChapters() {
                       <p className="font-data text-xs text-red-400">
                         CHAPTER {chapter.chapterNumber}
                       </p>
-                      <h2 className="mt-1 text-2xl font-bold">
+                      <h2 className="mt-2 font-serif text-3xl font-black leading-tight tracking-tight">
                         {chapter.chapterName}
                       </h2>
                     </div>
                     <span className="status-pill">Active</span>
                   </div>
-                  <p className="mt-4 line-clamp-3 leading-7 text-[#888]">
-                    {chapter.description}
-                  </p>
+                  {chapter.description && <p className="mt-4 line-clamp-3 leading-7 text-[#888]">{chapter.description}</p>}
                   <div className="mt-5 flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <Users size={16} className="text-red-500" />
                       {chapter.memberCount} members
                     </span>
-                    <span className="font-data text-red-400">
-                      Rs{" "}
-                      {Number(chapter.subscriptionAmount || 0).toLocaleString(
-                        "en-IN",
-                      )}
-                    </span>
                   </div>
-                  <p className="mt-2 text-xs text-[#888]">
-                    {chapter.subscriptionName}
-                  </p>
                   <Link
                     to={`/join?chapter=${chapter.id}`}
                     className="glow-button glow-button-primary mt-auto !mt-6 w-full"

@@ -63,6 +63,9 @@ export default function ManageEvents() {
       const event = await eventApi.create({
         ...form,
         chapterId: form.chapterId ? Number(form.chapterId) : null,
+        eventTime: form.eventTime || null,
+        location: form.location.trim() || null,
+        description: form.description.trim() || null,
       });
       if (form.imageUrl) await eventApi.addImage(event.id, form.imageUrl);
       if (imageFile) await eventApi.uploadImage(event.id, imageFile);
@@ -77,9 +80,15 @@ export default function ManageEvents() {
     }
   }
   async function remove(id) {
-    await eventApi.remove(id);
-    toast.success("Event deleted");
-    load();
+    if (!window.confirm("Permanently delete this event for every member?")) return;
+    try {
+      await eventApi.remove(id);
+      setItems((current) => current.filter((event) => event.id !== id));
+      if (selectedEvent?.id === id) setSelectedEvent(null);
+      toast.success("Event permanently deleted");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not delete event");
+    }
   }
   async function attendance(userId, status) {
     const updated = await eventApi.confirmAttendance(

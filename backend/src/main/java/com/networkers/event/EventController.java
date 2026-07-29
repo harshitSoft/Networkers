@@ -5,6 +5,7 @@ import com.networkers.chapter.ChapterRepository;
 import com.networkers.common.ApiResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 import com.networkers.notification.NotificationService;
 import com.networkers.user.UserRepository;
 import com.networkers.user.Role;
@@ -50,6 +51,7 @@ public class EventController {
     @PutMapping("/api/admin/events/{eventId}/rsvps/{userId}") public ApiResponse<RsvpView> confirmAttendance(@PathVariable Long eventId,@PathVariable Long userId,@RequestBody RsvpRequest request){Event event=find(eventId);User user=users.findById(userId).orElseThrow(()->new EntityNotFoundException("User not found"));EventRsvp existing=rsvps.findByEventAndUser(event,user).orElse(null);if(request.status()==EventRsvpStatus.PENDING){if(existing!=null)rsvps.delete(existing);return ApiResponse.ok("Attendance reset to pending",view(user,EventRsvpStatus.PENDING));}EventRsvp r=existing==null?new EventRsvp():existing;r.setEvent(event);r.setUser(user);r.setStatus(request.status());return ApiResponse.ok("Attendance updated",view(rsvps.save(r)));}
 
     @PostMapping("/api/admin/events")
+    @Transactional
     public ApiResponse<Event> create(@RequestBody EventRequest request) {
         if (request.eventDate() == null) throw new IllegalArgumentException("Event date is required");
         if (request.eventDate().isBefore(today())) throw new IllegalArgumentException("Past-date events cannot be created");
@@ -75,6 +77,7 @@ public class EventController {
     }
 
     @DeleteMapping("/api/admin/events/{id}")
+    @Transactional
     public ApiResponse<?> delete(@PathVariable Long id) {
         Event event=find(id);rsvps.deleteByEvent(event);events.delete(event);
         return ApiResponse.ok("Event deleted", true);

@@ -1,7 +1,6 @@
 package com.networkers.chapter;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,9 +11,6 @@ public class Chapter {
     @Column(length = 2000) private String description;
     @Column(columnDefinition = "TEXT") private String bannerImage;
     private String location;
-    private String subscriptionName;
-    private BigDecimal subscriptionAmount;
-    private Integer subscriptionDurationMonths;
     private boolean active = true;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -33,12 +29,6 @@ public class Chapter {
     public void setBannerImage(String bannerImage) { this.bannerImage = bannerImage; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
-    public String getSubscriptionName() { return subscriptionName; }
-    public void setSubscriptionName(String subscriptionName) { this.subscriptionName = subscriptionName; }
-    public BigDecimal getSubscriptionAmount() { return subscriptionAmount; }
-    public void setSubscriptionAmount(BigDecimal subscriptionAmount) { this.subscriptionAmount = subscriptionAmount; }
-    public Integer getSubscriptionDurationMonths() { return subscriptionDurationMonths; }
-    public void setSubscriptionDurationMonths(Integer subscriptionDurationMonths) { this.subscriptionDurationMonths = subscriptionDurationMonths; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }

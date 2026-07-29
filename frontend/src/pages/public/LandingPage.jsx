@@ -129,21 +129,18 @@ export default function LandingPage() {
                           <p className="font-data text-xs text-red-400">
                             CHAPTER {chapter.chapterNumber}
                           </p>
-                          <h3 className="mt-2 text-2xl font-bold">
+                          <h3 className="mt-2 font-serif text-3xl font-black leading-tight tracking-tight">
                             {chapter.chapterName}
                           </h3>
                         </div>
                         <span className="status-pill self-start">Active</span>
                       </div>
-                      <p className="mt-4 line-clamp-2 text-[#888]">
-                        {chapter.description}
-                      </p>
+                      {chapter.description && <p className="mt-4 line-clamp-2 text-[#888]">{chapter.description}</p>}
                       <div className="mt-5 flex justify-between text-sm">
                         <span className="flex gap-2">
                           <Users size={17} className="text-red-500" />
                           {chapter.memberCount} members
                         </span>
-                        <span>{chapter.subscriptionName}</span>
                       </div>
                       <Link
                         to={`/join?chapter=${chapter.id}`}

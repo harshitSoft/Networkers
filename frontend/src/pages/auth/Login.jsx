@@ -4,7 +4,6 @@ import {
   EyeOff,
   LockKeyhole,
   Mail,
-  Network,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -281,12 +280,18 @@ export function AuthFrame({ children }) {
       <div className="auth-card glass-card relative z-10 w-full max-w-[440px] rounded-3xl p-7 sm:p-9">
         <Link
           to="/"
-          className="mx-auto flex w-fit items-center gap-2 text-xl font-bold"
+          className="mx-auto block w-[220px]"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-red-600 shadow-[0_0_25px_rgba(225,6,0,.4)]">
-            <Network />
-          </span>
-          Network<span className="-ml-2 text-red-500">ers</span>
+          <img
+            src="/brand/networkers-logo-light.png"
+            alt="Networkers"
+            className="h-auto w-full object-contain dark:hidden"
+          />
+          <img
+            src="/brand/networkers-logo-dark.png"
+            alt="Networkers"
+            className="hidden h-auto w-full scale-[1.7] object-contain dark:block"
+          />
         </Link>
         <p className="mt-3 text-center text-xs uppercase tracking-[.16em] text-[#888]">
           Connect · Refer · Grow

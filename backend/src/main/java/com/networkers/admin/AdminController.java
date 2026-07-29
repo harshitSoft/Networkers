@@ -55,9 +55,16 @@ public class AdminController {
         applyUser(user, request, assignedChapterId);
         user.setPassword(encoder.encode(request.password()));
         User saved = users.save(user);
-        mail.sendApproval(saved.getFullName(), saved.getEmail(), request.password());
         if (joinRequest != null) { joinRequest.setStatus(JoinRequestStatus.ACCOUNT_CREATED); joinRequests.save(joinRequest); }
-        return ApiResponse.ok("User created and login credentials emailed", AuthController.userDto(saved));
+        return ApiResponse.ok("User created successfully", AuthController.userDto(saved));
+    }
+    @PostMapping("/users/{id}/send-credentials")
+    public ApiResponse<?> sendCredentials(@PathVariable Long id, @RequestBody CredentialRequest request) {
+        if (request.password() == null || request.password().isBlank()) throw new IllegalArgumentException("Temporary password is required");
+        User user = users.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (!encoder.matches(request.password(), user.getPassword())) throw new IllegalArgumentException("The temporary password does not match this user's current password");
+        mail.sendApproval(user.getFullName(), user.getEmail(), request.password());
+        return ApiResponse.ok("Login credentials sent to " + user.getEmail(), true);
     }
     @PutMapping("/users/{id}") public ApiResponse<?> updateUser(@PathVariable Long id, @RequestBody CreateUserRequest request) {
         validateUserRequest(request, false);
@@ -113,8 +120,8 @@ public class AdminController {
         user.setLocation(request.location());
         user.setChapter(chapter);
         // Chapter assignment is the source of truth for membership pricing.
-        user.setSubscriptionPlan(chapter == null ? request.subscriptionPlan() : chapter.getSubscriptionName());
-        user.setSubscriptionAmount(chapter == null ? null : chapter.getSubscriptionAmount());
+        user.setSubscriptionPlan(request.subscriptionPlan());
+        user.setSubscriptionAmount(null);
         user.setSubscriptionStartDate(request.subscriptionStartDate());
         user.setSubscriptionEndDate(request.subscriptionEndDate());
         user.setEnabled(request.enabled() == null || request.enabled());
@@ -123,4 +130,5 @@ public class AdminController {
                                     String businessName, String businessCategory, String services, String location,
                                     Long chapterId, String subscriptionPlan, LocalDate subscriptionStartDate,
                                     LocalDate subscriptionEndDate, Boolean enabled, Long joinRequestId) {}
+    public record CredentialRequest(String password) {}
 }

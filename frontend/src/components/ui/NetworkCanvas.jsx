@@ -50,15 +50,16 @@ export default function NetworkCanvas({ intensity = 1 }) {
         const a = nodes[i], b = nodes[j], distance = Math.hypot(a.x - b.x, a.y - b.y);
         if (distance >= threshold) continue;
         const strength = (1 - distance / threshold) * intensity;
-        const alpha = (0.1 + strength * 0.24) * (1 + lightMix * 0.35);
-        ctx.strokeStyle = `rgba(225,6,0,${alpha})`; ctx.lineWidth = 0.55 + strength * 0.35;
+        const alpha = (0.1 + strength * 0.24) * (1 + lightMix * 1.2);
+        const red = Math.round(225 + (150 - 225) * lightMix);
+        ctx.strokeStyle = `rgba(${red},6,0,${alpha})`; ctx.lineWidth = 0.55 + strength * (0.35 + lightMix * 0.25);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.setLineDash([]);
       nodes.forEach((node) => {
         const radius = node.size * (1 + Math.sin(now / 850 + node.phase) * 0.25);
-        const channel = Math.round(255 + (20 - 255) * lightMix);
-        ctx.fillStyle = `rgba(${channel},${channel},${channel},${0.42 + lightMix * 0.12})`;
+        const channel = Math.round(255 + (35 - 255) * lightMix);
+        ctx.fillStyle = `rgba(${channel},${channel},${channel},${0.42 + lightMix * 0.35})`;
         ctx.beginPath(); ctx.arc(node.x, node.y, radius, 0, Math.PI * 2); ctx.fill();
       });
       raf = requestAnimationFrame(draw);

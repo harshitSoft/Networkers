@@ -44,7 +44,7 @@ export default function ManageMonthlyMeetings() {
     try {
       const data = await monthlyMeetingApi.regenerate(chapterId, month);
       setItems(data);
-      toast.success(`Meetings generated for ${month}`);
+      toast.success(`Face-to-face groups generated for ${month}`);
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not generate meetings");
     } finally {
@@ -64,7 +64,7 @@ export default function ManageMonthlyMeetings() {
   }
 
   return <div className="space-y-5">
-    <header><p className="page-kicker">Automation oversight</p><h1 className="page-title">Monthly <span className="text-brand-accent">Meetings</span></h1><p className="mt-2 text-sm text-brand-muted">View, generate, or permanently delete meeting groups for the current and upcoming months.</p></header>
+    <header><p className="page-kicker">Automation oversight</p><h1 className="page-title">Face to <span className="text-brand-accent">Face</span></h1><p className="mt-2 text-sm text-brand-muted">View, generate, or permanently delete one-to-one groups for the current and upcoming months.</p></header>
     <div className="card space-y-3 p-4">
       <div className="flex flex-wrap gap-3">
         <select className="field max-w-sm" value={chapterId} onChange={(event) => setChapterId(event.target.value)}><option value="">Select chapter</option>{chapters.map((chapter) => <option value={chapter.id} key={chapter.id}>{chapter.chapterName}</option>)}</select>

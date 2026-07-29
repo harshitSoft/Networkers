@@ -10,8 +10,6 @@ const blank = {
   chapterNumber: "",
   chapterName: "",
   description: "",
-  subscriptionName: "",
-  subscriptionAmount: "",
   active: true,
 };
 
@@ -44,7 +42,7 @@ export default function ManageChapters() {
     const payload = {
       ...form,
       chapterNumber: Number(form.chapterNumber),
-      subscriptionAmount: Number(form.subscriptionAmount),
+      description: form.description.trim() || null,
       active: true,
     };
     try {
@@ -71,9 +69,7 @@ export default function ManageChapters() {
     setForm({
       chapterNumber: chapter.chapterNumber,
       chapterName: chapter.chapterName,
-      description: chapter.description,
-      subscriptionName: chapter.subscriptionName,
-      subscriptionAmount: chapter.subscriptionAmount,
+      description: chapter.description || "",
       active: chapter.active,
     });
   }
@@ -123,16 +119,14 @@ export default function ManageChapters() {
               <p className="mt-1 text-sm text-slate-500">
                 {editingId
                   ? "Update the selected chapter details."
-                  : "Add the basic chapter and subscription details."}
+                  : "Only the chapter number and chapter name are required."}
               </p>
             </div>
           </div>
-          <div className="mt-5 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid items-end gap-4 md:grid-cols-2">
             {[
               ["chapterNumber", "Chapter number", "number"],
               ["chapterName", "Chapter name", "text"],
-              ["subscriptionName", "Subscription name", "text"],
-              ["subscriptionAmount", "Subscription amount", "number"],
             ].map(([key, label, type]) => (
               <label className="grid gap-1.5" key={key}>
                 <span className="text-xs font-bold text-slate-600">
@@ -141,7 +135,7 @@ export default function ManageChapters() {
                 <input
                   type={type}
                   min={type === "number" ? "0" : undefined}
-                  required
+                  required={key === "chapterNumber" || key === "chapterName"}
                   className="field border-red-100 focus:border-red-600 focus:ring-red-600/10"
                   placeholder={`Enter ${label.toLowerCase()}`}
                   value={form[key]}
@@ -151,7 +145,7 @@ export default function ManageChapters() {
             ))}
             <label className="grid gap-1.5 xl:col-span-2">
               <span className="text-xs font-bold text-slate-600">
-                Description
+                Description <span className="font-normal text-slate-400">(optional)</span>
               </span>
               <textarea
                 className="field min-h-[46px] resize-y border-red-100 focus:border-red-600 focus:ring-red-600/10"
@@ -209,9 +203,7 @@ export default function ManageChapters() {
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-black">All chapters</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                View membership, subscription, and status details.
-              </p>
+              <p className="mt-1 text-sm text-slate-500">View membership and optional chapter details.</p>
             </div>
             <p className="rounded-full border border-red-500/20 px-3 py-1.5 text-xs font-bold text-slate-500">
               Showing {visibleItems.length} of {items.length}
@@ -226,7 +218,7 @@ export default function ManageChapters() {
                       <p className="text-xs font-black uppercase tracking-wider text-red-700">
                         Chapter {chapter.chapterNumber}
                       </p>
-                      <h3 className="mt-1 text-xl font-black">
+                      <h3 className="mt-2 font-serif text-3xl font-black leading-tight tracking-tight text-slate-950">
                         {chapter.chapterName}
                       </h3>
                     </div>
@@ -236,29 +228,8 @@ export default function ManageChapters() {
                       {chapter.active ? "Active" : "Inactive"}
                     </span>
                   </div>
-                  <p className="mt-4 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-slate-600">
-                    {chapter.description || "No description provided."}
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-gradient-to-r from-[#FFF1F2] to-white p-4 text-sm">
-                    <div className="col-span-2">
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Subscription
-                      </p>
-                      <p className="mt-1 font-black">
-                        {chapter.subscriptionName || "Not set"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Amount
-                      </p>
-                      <p className="mt-1 font-black text-red-700">
-                        Rs{" "}
-                        {Number(chapter.subscriptionAmount || 0).toLocaleString(
-                          "en-IN",
-                        )}
-                      </p>
-                    </div>
+                  {chapter.description && <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">{chapter.description}</p>}
+                  <div className="mt-4 rounded-xl bg-gradient-to-r from-[#FFF1F2] to-white p-4 text-sm">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                         Members

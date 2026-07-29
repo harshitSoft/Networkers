@@ -24,7 +24,7 @@ export default function PublicEvents() {
   return (
     <div className="public-page">
       <PublicNavbar />
-      <main className="content-shell section-pad">
+      <main className="content-shell public-page-top">
         <p className="eyebrow">The calendar</p>
         <h1 className="page-title mt-3">
           Meet. Learn. <span className="text-gradient">Refer.</span>

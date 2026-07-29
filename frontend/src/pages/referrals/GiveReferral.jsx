@@ -66,7 +66,16 @@ export default function GiveReferral() {
   }, [selected]);
 
   function updateField(key, value) {
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => {
+      const next = { ...current, [key]: value };
+      if (selected) {
+        sessionStorage.setItem(
+          draftKey,
+          JSON.stringify({ receiverId: selected.id, form: next }),
+        );
+      }
+      return next;
+    });
   }
 
   function openForm(member) {
@@ -87,16 +96,29 @@ export default function GiveReferral() {
     if (!selected || submitting) return;
     setSubmitting(true);
     try {
-      await referralApi.give({
+      const receiverId = Number(selected.id);
+      const estimatedPrice =
+        form.estimatedPrice === "" ? null : Number(form.estimatedPrice);
+      const payload = {
         ...form,
         clientName: form.clientName.trim(),
         clientPhone: form.clientPhone.trim(),
         clientEmail: form.clientEmail.trim() || null,
         workTitle: form.workTitle.trim(),
         workCategory: form.workCategory.trim(),
-        receiverId: Number(selected.id),
-        estimatedPrice: form.estimatedPrice === "" ? null : Number(form.estimatedPrice)
-      });
+        receiverId,
+        receivedById: receiverId,
+        workName: form.workTitle.trim(),
+        productOrServiceRequired: form.workCategory.trim(),
+        estimatedPrice,
+        estimatedBudget: estimatedPrice,
+        requirement: form.description.trim() || null,
+      };
+      if (!payload.clientPhone) {
+        toast.error("Client contact number is required");
+        return;
+      }
+      await referralApi.give(payload);
       toast.success("Referral sent successfully");
       closeForm();
       navigate("/referrals/given");
@@ -159,7 +181,7 @@ export default function GiveReferral() {
                 ["clientName", "Client name", true], ["clientPhone", "Client contact number", true], ["clientEmail", "Client email (optional)", false],
                 ["workTitle", "Work title", true], ["workCategory", "Business type", true], ["estimatedPrice", "Estimated price (optional)", false],
                 ["location", "Location (optional)", false]
-              ].map(([key, label, isRequired]) => <input key={key} name={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : key === "clientEmail" ? "email" : key === "clientPhone" ? "tel" : "text"} inputMode={key === "clientPhone" ? "tel" : key === "estimatedPrice" ? "decimal" : undefined} autoComplete={key === "clientPhone" ? "tel" : key === "clientEmail" ? "email" : "off"} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key] ?? ""} onChange={(e) => updateField(key, e.target.value)} />)}
+              ].map(([key, label, isRequired]) => <input key={key} name={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : key === "clientEmail" ? "email" : key === "clientPhone" ? "tel" : "text"} inputMode={key === "clientPhone" ? "tel" : key === "estimatedPrice" ? "decimal" : undefined} autoComplete={key === "clientPhone" ? "tel-national" : key === "clientEmail" ? "email" : "off"} maxLength={key === "clientPhone" ? 30 : undefined} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key] ?? ""} onChange={(e) => updateField(key, e.currentTarget.value)} onBlur={(e) => updateField(key, e.currentTarget.value)} />)}
               <textarea name="description" className="field md:col-span-2" rows="4" placeholder="Description of work (optional)" value={form.description ?? ""} onChange={(e) => updateField("description", e.target.value)} />
               <textarea name="notes" className="field md:col-span-2" rows="3" placeholder="Notes" value={form.notes ?? ""} onChange={(e) => updateField("notes", e.target.value)} />
             </div>

@@ -13,9 +13,27 @@ import GlowCard from "../../components/ui/GlowCard.jsx";
 import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
 import { chapterApi } from "../../api/chapterApi.js";
 import { eventApi } from "../../api/eventApi.js";
+import { realGalleryItems } from "../../data/galleryItems.js";
+
+const heroSlides = [
+  {
+    src: "/gallery/mainheronetworkers.webp",
+    alt: "Networkers community members at a professional gathering",
+  },
+  {
+    src: "/gallery/networkers11.jpeg",
+    alt: "Networkers members gathered for a community event",
+  },
+  {
+    src: "/gallery/networkers66.webp",
+    alt: "Networkers chapter members together",
+  },
+];
+
 export default function LandingPage() {
   const [chapters, setChapters] = useState([]);
   const [events, setEvents] = useState([]);
+  const [heroSlide, setHeroSlide] = useState(0);
   useEffect(() => {
     chapterApi
       .all()
@@ -26,6 +44,14 @@ export default function LandingPage() {
       .then(setEvents)
       .catch(() => setEvents([]));
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => setHeroSlide((current) => (current + 1) % heroSlides.length),
+      2000,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <div className="public-page">
       <PublicNavbar />
@@ -59,20 +85,18 @@ export default function LandingPage() {
             </div>
           </ScrollReveal>
           <ScrollReveal direction="right">
-            <div className="image-frame relative aspect-[4/5] rounded-[2rem]">
-              <img
-                className="h-full w-full object-cover"
-                src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=85"
-                alt="Professionals networking"
-              />
-              <div className="hero-stat absolute bottom-6 left-6 z-10 rounded-2xl border border-white/15 bg-black/70 p-4 text-white backdrop-blur-xl">
-                <p className="font-data text-3xl font-bold">
-                  {chapters.reduce((sum, c) => sum + (c.memberCount || 0), 0)}
-                </p>
-                <p className="text-xs uppercase text-neutral-300">
-                  Members across {chapters.length} chapters
-                </p>
-              </div>
+            <div className="hero-main-image image-frame group relative h-[400px] rounded-[2rem] sm:h-[500px] lg:h-[600px]">
+              {heroSlides.map((slide, index) => (
+                <img
+                  key={slide.src}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+                    index === heroSlide ? "opacity-100" : "pointer-events-none opacity-0"
+                  }`}
+                  src={slide.src}
+                  alt={index === heroSlide ? slide.alt : ""}
+                  aria-hidden={index !== heroSlide}
+                />
+              ))}
             </div>
           </ScrollReveal>
         </section>
@@ -96,7 +120,7 @@ export default function LandingPage() {
               </div>
             ) : (
               <div className="mt-10 grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {chapters.slice(0, 6).map((chapter, i) => (
+                {chapters.slice(0, 3).map((chapter, i) => (
                   <ScrollReveal className="h-full" delay={i * 60} key={chapter.id}>
                     <GlowCard className="h-full">
                       <div className="flex h-full flex-col">
@@ -138,7 +162,7 @@ export default function LandingPage() {
         <section className="content-shell section-pad">
           <p className="eyebrow">Upcoming events</p>
           <h2 className="mt-3 text-4xl font-bold">
-            Rooms worth showing up for.
+            Events that bring the right people together.
           </h2>
           {events.length === 0 ? (
             <div className="glass-card mt-10 rounded-3xl p-10 text-center text-[#888]">
@@ -188,6 +212,36 @@ export default function LandingPage() {
             <Link to="/events" className="glow-button glow-button-secondary">
               View all events <ArrowRight size={17} />
             </Link>
+          </div>
+        </section>
+        <section className="section-solid section-pad">
+          <div className="content-shell">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {realGalleryItems.slice(0, 6).map((item, index) => (
+                <ScrollReveal delay={index * 55} key={item.id}>
+                  <Link
+                    to="/gallery"
+                    className="image-frame group block aspect-[4/3] overflow-hidden rounded-3xl bg-brand-panel"
+                    aria-label={`View gallery: ${item.title}`}
+                  >
+                    <img
+                      loading="lazy"
+                      src={item.image}
+                      alt={item.title}
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 to-transparent p-5 pt-14 text-white">
+                      <span className="text-xs font-black uppercase tracking-wider text-red-300">{item.category}</span>
+                    </span>
+                  </Link>
+                </ScrollReveal>
+              ))}
+            </div>
+            <div className="mt-8 text-center">
+              <Link to="/gallery" className="glow-button glow-button-secondary">
+                View full gallery <ArrowRight size={17} />
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -30,7 +30,7 @@ export default function PublicChapters() {
   return (
     <div className="public-page">
       <PublicNavbar />
-      <main className="content-shell section-pad">
+      <main className="content-shell public-page-top">
         <p className="eyebrow">The hub</p>
         <h1 className="page-title mt-3">
           Find your <span className="text-gradient">chapter.</span>

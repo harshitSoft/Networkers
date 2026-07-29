@@ -30,7 +30,7 @@ export default function AboutPage() {
     <div className="public-page">
       <PublicNavbar />
       <main>
-        <section className="content-shell py-24 text-center sm:py-32">
+        <section className="content-shell public-page-top text-center">
           <p className="eyebrow">Home &gt; About</p>
           <h1 className="mt-5 text-5xl font-bold sm:text-7xl">
             Relationships are the{" "}
@@ -53,7 +53,7 @@ export default function AboutPage() {
                 clear accountability, and a system built around meaningful
                 introductions.
               </p>
-              <blockquote className="mt-8 border-l-2 border-red-500 bg-red-600/10 p-6 text-xl font-semibold">
+              <blockquote className="about-quote mt-8 border-l-2 border-red-500 bg-red-600/10 p-6 text-3xl font-semibold">
                 “Trust grows when value moves in both directions.”
               </blockquote>
             </ScrollReveal>
@@ -61,8 +61,8 @@ export default function AboutPage() {
               <div className="image-frame aspect-[4/3] rounded-3xl">
                 <img
                   className="h-full w-full object-cover"
-                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1000&q=85"
-                  alt="Networkers team collaborating"
+                  src="/gallery/networkers11.jpeg"
+                  alt="Networkers community members together"
                 />
               </div>
             </ScrollReveal>

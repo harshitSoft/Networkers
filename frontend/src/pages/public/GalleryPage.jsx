@@ -8,6 +8,7 @@ import GalleryGrid from "../../components/gallery/GalleryGrid.jsx";
 import LightboxModal from "../../components/gallery/LightboxModal.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 import { eventApi } from "../../api/eventApi";
+import { realGalleryItems } from "../../data/galleryItems.js";
 
 const tabs = [
   "All",
@@ -17,7 +18,7 @@ const tabs = [
   "Celebrations",
 ];
 
-const fallbackItems = [
+const stockFallbackItems = [
   [
     "chapter-meet",
     "Chapter Meetings",
@@ -88,6 +89,7 @@ const fallbackItems = [
   title,
   date,
 }));
+const fallbackItems = realGalleryItems.length ? realGalleryItems : stockFallbackItems;
 
 export default function GalleryPage() {
   const [active, setActive] = useState("All");
@@ -107,7 +109,7 @@ export default function GalleryPage() {
       .catch(() => setApiItems([]));
   }, []);
 
-  const allItems = apiItems.length > 0 ? apiItems : fallbackItems;
+  const allItems = [...fallbackItems, ...apiItems];
   const filtered = useMemo(
     () =>
       active === "All"
@@ -135,22 +137,7 @@ export default function GalleryPage() {
   return (
     <div className="public-page">
       <PublicNavbar />
-      <main className="space-y-14 pb-14">
-        <section
-          className="relative grid min-h-[430px] place-items-center bg-cover bg-center px-4 text-center text-white"
-          style={{
-            backgroundImage: `url(${allItems[0]?.image || fallbackItems[0].image})`,
-          }}
-        >
-          <div className="absolute inset-0 bg-black/75" />
-          <div className="glass-card relative max-w-4xl rounded-3xl px-6 py-10">
-            <p className="eyebrow">Networkers gallery</p>
-            <h1 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">
-              Capturing Moments That Build Networks
-            </h1>
-          </div>
-        </section>
-
+      <main className="space-y-10 pb-14 pt-8">
         <GalleryTabs
           tabs={tabs}
           active={active}

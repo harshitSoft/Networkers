@@ -4,6 +4,7 @@ import { Ban, Check, Pencil, Search, Trash2, X } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import EmptyState from "../../components/EmptyState.jsx";
 import { chapterApi } from "../../api/chapterApi";
+import { normalizePhone } from "../../utils/formValues.js";
 
 export default function ManageUsers() {
   const [items, setItems] = useState([]);
@@ -41,7 +42,7 @@ export default function ManageUsers() {
     finally { setDeleting(false); }
   }
   function startEdit(user) {
-    setEditTarget({ fullName: user.fullName || "", email: user.email || "", mobile: user.mobile || "", businessName: user.businessName || "", businessCategory: user.businessCategory || "", services: user.services || "", location: user.location || "", chapterId: String(user.chapter?.id || user.chapterId || ""), role: user.role || "USER", enabled: user.enabled !== false, subscriptionStartDate: user.subscriptionStartDate || "", subscriptionEndDate: user.subscriptionEndDate || "", id: user.id });
+    setEditTarget({ fullName: user.fullName || "", email: user.email || "", mobile: normalizePhone(user.mobile), businessName: user.businessName || "", businessCategory: user.businessCategory || "", services: user.services || "", location: user.location || "", chapterId: String(user.chapter?.id || user.chapterId || ""), role: user.role || "USER", enabled: user.enabled !== false, subscriptionStartDate: user.subscriptionStartDate || "", subscriptionEndDate: user.subscriptionEndDate || "", id: user.id });
   }
   async function saveEdit(e) {
     e.preventDefault();
@@ -88,7 +89,7 @@ export default function ManageUsers() {
           <form className="card max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6" onSubmit={saveEdit} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between"><div><p className="page-kicker">Member management</p><h3 className="mt-1 text-2xl font-black">Edit User</h3></div><button type="button" className="btn-muted" onClick={() => setEditTarget(null)} disabled={saving}><X size={18} /></button></div>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {[["fullName","Full name","text"],["email","Email","email"],["mobile","Mobile","tel"],["businessName","Business name","text"],["businessCategory","Business category/work","text"],["services","Services","text"],["location","Location","text"],["subscriptionStartDate","Subscription start date","date"],["subscriptionEndDate","Subscription end date","date"]].map(([key,label,type]) => <label key={key}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{label}</span><input name={key} className="field" type={type} required={["fullName","email","mobile"].includes(key)} value={editTarget[key]} onChange={(e) => setEditTarget({ ...editTarget, [key]: e.target.value })} /></label>)}
+              {[["fullName","Full name","text"],["email","Email","email"],["mobile","Mobile","tel"],["businessName","Business name","text"],["businessCategory","Business category/work","text"],["services","Services","text"],["location","Location","text"],["subscriptionStartDate","Subscription start date","date"],["subscriptionEndDate","Subscription end date","date"]].map(([key,label,type]) => <label key={key}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{label}</span><input name={key} className="field" type={type} required={["fullName","email","mobile"].includes(key)} value={editTarget[key]} onChange={({ currentTarget: { value } }) => setEditTarget((current) => ({ ...current, [key]: key === "mobile" ? normalizePhone(value) : value }))} /></label>)}
               <label><span className="mb-1 block text-xs font-bold uppercase text-slate-500">Chapter</span><select required className="field" value={editTarget.chapterId} onChange={(e) => setEditTarget({ ...editTarget, chapterId: e.target.value })}><option value="">Assign chapter</option>{chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select></label>
             </div>
             <div className="mt-6 flex justify-end gap-2"><button type="button" className="btn-muted" onClick={() => setEditTarget(null)} disabled={saving}>Cancel</button><button className="btn-primary" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button></div>

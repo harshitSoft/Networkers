@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { connectionApi } from "../../api/connectionApi";
 import { referralApi } from "../../api/referralApi";
 import EmptyState from "../../components/EmptyState.jsx";
+import { normalizePhone } from "../../utils/formValues.js";
 
 const directFields = [
   ["clientName", "Client name"],
@@ -79,7 +80,7 @@ export default function CreateReferral() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {(type === "OPEN" ? openFields : directFields).map(([field, label]) => (
-          <input key={field} className="field" placeholder={label} value={form[field] || ""} onChange={(e) => setForm({ ...form, [field]: e.target.value })} />
+          <input key={field} name={field} type={field === "clientPhone" ? "tel" : "text"} className="field" placeholder={label} value={form[field] || ""} onChange={({ currentTarget: { value } }) => setForm((current) => ({ ...current, [field]: field === "clientPhone" ? normalizePhone(value) : value }))} />
         ))}
       </div>
 

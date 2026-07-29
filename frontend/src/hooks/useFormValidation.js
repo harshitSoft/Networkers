@@ -29,18 +29,11 @@ export default function useFormValidation() {
         }
       });
     }
-    const sanitizePhone = (event) => {
-      const field = event.target;
-      if (!(field instanceof HTMLInputElement)) return;
-      const hint = `${field.name} ${field.id} ${field.placeholder}`.toLowerCase();
-      if (field.type === "tel" || /mobile|phone|contact number/.test(hint)) field.value = field.value.replace(/\D/g, "").slice(0, 10);
-    };
     configure();
     const observer = new MutationObserver((entries) => entries.forEach((entry) => entry.addedNodes.forEach((node) => {
       if (node.nodeType === Node.ELEMENT_NODE) configure(node);
     })));
     observer.observe(document.body, { childList: true, subtree: true });
-    document.addEventListener("input", sanitizePhone, true);
-    return () => { observer.disconnect(); document.removeEventListener("input", sanitizePhone, true); };
+    return () => observer.disconnect();
   }, []);
 }

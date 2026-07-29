@@ -4,6 +4,7 @@ import { adminApi } from "../../api/adminApi";
 import { chapterApi } from "../../api/chapterApi";
 import ManageUsers from "./ManageUsers.jsx";
 import PasswordField from "../../components/PasswordField.jsx";
+import { normalizePhone } from "../../utils/formValues.js";
 
 const blank = { fullName: "", email: "", mobile: "", password: "", role: "USER", businessName: "", businessCategory: "", services: "", location: "", chapterId: "", subscriptionPlan: "", subscriptionStartDate: "", subscriptionEndDate: "", enabled: true };
 
@@ -34,7 +35,7 @@ export default function CreateUser() {
           ["fullName", "Full name"], ["email", "Email", "email"], ["mobile", "Mobile", "tel"],
           ["businessName", "Business name"], ["businessCategory", "Business category/work"], ["services", "Services"], ["location", "Location"],
           ["subscriptionStartDate", "Subscription start date", "date"], ["subscriptionEndDate", "Subscription end date", "date"]
-        ].map(([key, label, type = "text"]) => <input key={key} name={key} type={type} required={["fullName", "email", "mobile"].includes(key)} className="field" placeholder={label} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />)}
+        ].map(([key, label, type = "text"]) => <input key={key} name={key} type={type} required={["fullName", "email", "mobile"].includes(key)} className="field" placeholder={label} value={form[key]} onChange={({ currentTarget: { value } }) => setForm((current) => ({ ...current, [key]: key === "mobile" ? normalizePhone(value) : value }))} />)}
         <PasswordField name="password" required placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <select required className="field" value={form.chapterId} onChange={(e) => setForm({ ...form, chapterId: e.target.value })}>
           <option value="">Assign chapter</option>

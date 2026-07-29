@@ -6,6 +6,7 @@ import { chapterApi } from "../../api/chapterApi";
 import { memberApi } from "../../api/memberApi";
 import { referralApi } from "../../api/referralApi";
 import GlowCard from "../../components/ui/GlowCard.jsx";
+import { normalizePhone } from "../../utils/formValues.js";
 
 const emptyForm = { clientName: "", clientPhone: "", clientEmail: "", workTitle: "", workCategory: "", estimatedPrice: "", description: "", location: "", notes: "" };
 const draftKey = "networkers_referral_draft";
@@ -66,8 +67,9 @@ export default function GiveReferral() {
   }, [selected]);
 
   function updateField(key, value) {
+    const normalizedValue = key === "clientPhone" ? normalizePhone(value) : value;
     setForm((current) => {
-      const next = { ...current, [key]: value };
+      const next = { ...current, [key]: normalizedValue };
       if (selected) {
         sessionStorage.setItem(
           draftKey,
@@ -181,7 +183,7 @@ export default function GiveReferral() {
                 ["clientName", "Client name", true], ["clientPhone", "Client contact number", true], ["clientEmail", "Client email (optional)", false],
                 ["workTitle", "Work title", true], ["workCategory", "Business type", true], ["estimatedPrice", "Estimated price (optional)", false],
                 ["location", "Location (optional)", false]
-              ].map(([key, label, isRequired]) => <input key={key} name={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : key === "clientEmail" ? "email" : key === "clientPhone" ? "tel" : "text"} inputMode={key === "clientPhone" ? "tel" : key === "estimatedPrice" ? "decimal" : undefined} autoComplete={key === "clientPhone" ? "tel-national" : key === "clientEmail" ? "email" : "off"} maxLength={key === "clientPhone" ? 30 : undefined} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key] ?? ""} onChange={(e) => updateField(key, e.currentTarget.value)} onBlur={(e) => updateField(key, e.currentTarget.value)} />)}
+              ].map(([key, label, isRequired]) => <input key={key} name={key} className="field" required={isRequired} type={key === "estimatedPrice" ? "number" : key === "clientEmail" ? "email" : key === "clientPhone" ? "tel" : "text"} inputMode={key === "clientPhone" ? "tel" : key === "estimatedPrice" ? "decimal" : undefined} autoComplete={key === "clientPhone" ? "tel-national" : key === "clientEmail" ? "email" : "off"} maxLength={key === "clientPhone" ? 30 : undefined} min={key === "estimatedPrice" ? "0" : undefined} placeholder={label} value={form[key] ?? ""} onChange={({ currentTarget: { value } }) => updateField(key, value)} onBlur={({ currentTarget: { value } }) => updateField(key, value)} />)}
               <textarea name="description" className="field md:col-span-2" rows="4" placeholder="Description of work (optional)" value={form.description ?? ""} onChange={(e) => updateField("description", e.target.value)} />
               <textarea name="notes" className="field md:col-span-2" rows="3" placeholder="Notes" value={form.notes ?? ""} onChange={(e) => updateField("notes", e.target.value)} />
             </div>

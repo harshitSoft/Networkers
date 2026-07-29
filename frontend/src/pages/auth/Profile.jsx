@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
 import { businessApi } from "../../api/businessApi";
 import PasswordField from "../../components/PasswordField.jsx";
+import { normalizePhone } from "../../utils/formValues.js";
 const emptyBusiness = {
   businessName: "",
   ownerName: "",
@@ -32,7 +33,7 @@ export default function Profile() {
   const [tab, setTab] = useState("personal");
   const [personal, setPersonal] = useState({
     fullName: user.fullName || "",
-    mobile: user.mobile || "",
+    mobile: normalizePhone(user.mobile),
     location: user.location || "",
   });
   const [password, setPassword] = useState({
@@ -53,6 +54,7 @@ export default function Profile() {
           setBusiness({
             ...emptyBusiness,
             ...data,
+            businessPhone: normalizePhone(data.businessPhone),
             foundedYear: data.foundedYear || "",
           });
         }
@@ -171,7 +173,7 @@ export default function Profile() {
               label={label}
               type={type}
               value={personal[key]}
-              onChange={(v) => setPersonal({ ...personal, [key]: v })}
+              onChange={(v) => setPersonal((current) => ({ ...current, [key]: key === "mobile" ? normalizePhone(v) : v }))}
             />
           ))}
           <Field label="Login email" value={user.email} disabled />
@@ -277,7 +279,7 @@ export default function Profile() {
               required={key === "businessName"}
               type={type}
               value={business[key] ?? ""}
-              onChange={(v) => setBusiness({ ...business, [key]: v })}
+              onChange={(v) => setBusiness((current) => ({ ...current, [key]: key === "businessPhone" ? normalizePhone(v) : v }))}
             />
           ))}
           <button className="btn-primary mt-2 md:col-span-2">

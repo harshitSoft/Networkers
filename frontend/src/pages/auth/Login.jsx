@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import PasswordField from "../../components/PasswordField.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi.js";
 import Loader from "../../components/Loader.jsx";
@@ -226,22 +227,18 @@ export default function Login() {
                     })
                   }
                 />
-                <input
+                <PasswordField
                   required
                   minLength="8"
-                  className="field"
-                  type="password"
                   placeholder="New password"
                   value={reset.newPassword}
                   onChange={(e) =>
                     setReset({ ...reset, newPassword: e.target.value })
                   }
                 />
-                <input
+                <PasswordField
                   required
                   minLength="8"
-                  className="field"
-                  type="password"
                   placeholder="Confirm new password"
                   value={reset.confirmPassword}
                   onChange={(e) =>

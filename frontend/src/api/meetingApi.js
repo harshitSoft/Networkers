@@ -13,5 +13,6 @@ export const monthlyMeetingApi = {
   completePair: (meetingId, pairId, form) => api.post(`/monthly-meetings/${meetingId}/pairs/${pairId}/complete`, form).then(unwrap),
   comment: (id, text) => api.post(`/monthly-meetings/${id}/comments`, { text }).then(unwrap),
   adminOverview: (chapterId, month) => api.get(`/monthly-meetings/admin/chapters/${chapterId}`, { params: month ? { month } : {} }).then(unwrap),
-  regenerate: (chapterId, month) => api.post(`/monthly-meetings/admin/chapters/${chapterId}/regenerate`, null, { params: month ? { month } : {} }).then(unwrap)
+  regenerate: (chapterId, month) => api.post(`/monthly-meetings/admin/chapters/${chapterId}/regenerate`, null, { params: month ? { month } : {} }).then(unwrap),
+  deleteGroup: (id) => api.delete(`/monthly-meetings/admin/${id}`).then(unwrap)
 };

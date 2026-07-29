@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Search, X } from "lucide-react";
+import { Ban, Check, Pencil, Search, Trash2, X } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import EmptyState from "../../components/EmptyState.jsx";
 import { chapterApi } from "../../api/chapterApi";
@@ -46,6 +46,7 @@ export default function ManageUsers() {
   async function saveEdit(e) {
     e.preventDefault();
     if (!editTarget.chapterId) return toast.error("A chapter assignment is required");
+    if (editTarget.mobile && !/^\d{10}$/.test(editTarget.mobile)) return toast.error("Enter a valid 10-digit mobile number");
     setSaving(true);
     try {
       const updated = await adminApi.updateUser(editTarget.id, { ...editTarget, chapterId: Number(editTarget.chapterId), password: "" });
@@ -57,7 +58,7 @@ export default function ManageUsers() {
   }
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl bg-white p-5 shadow-premium md:flex md:items-center md:justify-between">
+      <div className="admin-surface rounded-2xl p-5 shadow-premium md:flex md:items-center md:justify-between">
         <div>
           <p className="page-kicker">Member management</p>
           <h2 className="mt-1 page-title">Users</h2>
@@ -74,7 +75,11 @@ export default function ManageUsers() {
           <td>{u.businessName || "-"}<p className="text-xs text-slate-500">{u.businessCategory || "-"}</p></td>
           <td>{u.chapter?.chapterName || u.chapterName || "Unassigned"}</td>
           <td><span className={`rounded-full px-3 py-1 text-xs font-black ${u.enabled ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{u.enabled ? "Active" : "Inactive"}</span></td>
-          <td><div className="flex flex-wrap gap-2"><button className="btn-muted" onClick={() => toggle(u)}>{u.enabled ? "Deactivate" : "Activate"}</button><button className="btn-muted" onClick={() => startEdit(u)}>Edit</button><button className="btn-muted text-red-600 hover:bg-red-50" onClick={() => setDeleteTarget(u)}>Delete</button></div></td>
+          <td><div className="flex flex-wrap gap-2">
+            <button className="btn-muted !h-9 !min-h-9 !w-9 !p-0" onClick={() => toggle(u)} aria-label={u.enabled ? `Deactivate ${u.fullName}` : `Activate ${u.fullName}`} title={u.enabled ? "Deactivate" : "Activate"}>{u.enabled ? <Ban size={16} /> : <Check size={16} />}</button>
+            <button className="btn-muted !h-9 !min-h-9 !w-9 !p-0" onClick={() => startEdit(u)} aria-label={`Edit ${u.fullName}`} title="Edit"><Pencil size={16} /></button>
+            <button className="btn-muted !h-9 !min-h-9 !w-9 !p-0 text-red-600 hover:bg-red-50" onClick={() => setDeleteTarget(u)} aria-label={`Delete ${u.fullName}`} title="Delete"><Trash2 size={16} /></button>
+          </div></td>
         </>
       )} />
       {filtered.length > 10 && <Pagination page={page} pageCount={pageCount} onPage={setPage} />}
@@ -83,7 +88,7 @@ export default function ManageUsers() {
           <form className="card max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6" onSubmit={saveEdit} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between"><div><p className="page-kicker">Member management</p><h3 className="mt-1 text-2xl font-black">Edit User</h3></div><button type="button" className="btn-muted" onClick={() => setEditTarget(null)} disabled={saving}><X size={18} /></button></div>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {[["fullName","Full name","text"],["email","Email","email"],["mobile","Mobile","tel"],["businessName","Business name","text"],["businessCategory","Business category/work","text"],["services","Services","text"],["location","Location","text"],["subscriptionStartDate","Subscription start date","date"],["subscriptionEndDate","Subscription end date","date"]].map(([key,label,type]) => <label key={key}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{label}</span><input className="field" type={type} required={["fullName","email"].includes(key)} value={editTarget[key]} onChange={(e) => setEditTarget({ ...editTarget, [key]: e.target.value })} /></label>)}
+              {[["fullName","Full name","text"],["email","Email","email"],["mobile","Mobile","tel"],["businessName","Business name","text"],["businessCategory","Business category/work","text"],["services","Services","text"],["location","Location","text"],["subscriptionStartDate","Subscription start date","date"],["subscriptionEndDate","Subscription end date","date"]].map(([key,label,type]) => <label key={key}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{label}</span><input name={key} className="field" type={type} required={["fullName","email","mobile"].includes(key)} value={editTarget[key]} onChange={(e) => setEditTarget({ ...editTarget, [key]: e.target.value })} /></label>)}
               <label><span className="mb-1 block text-xs font-bold uppercase text-slate-500">Chapter</span><select required className="field" value={editTarget.chapterId} onChange={(e) => setEditTarget({ ...editTarget, chapterId: e.target.value })}><option value="">Assign chapter</option>{chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select></label>
             </div>
             <div className="mt-6 flex justify-end gap-2"><button type="button" className="btn-muted" onClick={() => setEditTarget(null)} disabled={saving}>Cancel</button><button className="btn-primary" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button></div>
@@ -92,9 +97,9 @@ export default function ManageUsers() {
       )}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
+          <div className="card w-full max-w-md p-6 shadow-2xl">
             <h3 className="text-xl font-black">Delete User</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">Delete {deleteTarget.fullName}? This member will be removed from the project.</p>
+            <p className="mt-3 text-sm leading-6 text-brand-muted">Delete {deleteTarget.fullName}? The account and its related database records will be permanently removed.</p>
             <div className="mt-6 flex justify-end gap-2"><button className="btn-muted" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</button><button className="btn-primary" onClick={confirmDelete} disabled={deleting}>{deleting ? "Deleting..." : "Delete"}</button></div>
           </div>
         </div>

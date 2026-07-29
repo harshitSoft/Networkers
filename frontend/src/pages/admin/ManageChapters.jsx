@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Edit3, Eye, Trash2, Users } from "lucide-react";
+import { CalendarDays, Edit3, Eye, Trash2, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { chapterApi } from "../../api/chapterApi";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 import { Pagination } from "./ManageUsers.jsx";
@@ -15,6 +16,7 @@ const blank = {
 };
 
 export default function ManageChapters() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(blank);
   const [editingId, setEditingId] = useState(null);
@@ -270,6 +272,13 @@ export default function ManageChapters() {
                     <button
                       type="button"
                       className="btn-muted flex-1 !px-3 !py-2"
+                      onClick={() => navigate(`/admin/monthly-meetings?chapterId=${chapter.id}`)}
+                    >
+                      <CalendarDays size={16} /> Meetings
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-muted !px-3 !py-2"
                       onClick={() => viewMembers(chapter)}
                     >
                       <Eye size={16} /> Members

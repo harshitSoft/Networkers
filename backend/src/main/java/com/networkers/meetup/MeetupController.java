@@ -28,6 +28,8 @@ public class MeetupController {
         return ApiResponse.ok("Meetup created", meetups.save(m));
     }
     @PutMapping("/admin/{id}") public ApiResponse<Meetup> update(@PathVariable Long id, @RequestBody MeetupRequest r) {
+        if (r.date() == null) throw new IllegalArgumentException("Meetup date is required");
+        if (r.date().isBefore(today())) throw new IllegalArgumentException("Meetup date cannot be in the past");
         return ApiResponse.ok("Meetup updated", meetups.save(apply(get(id), r)));
     }
     @DeleteMapping("/admin/{id}") public ApiResponse<Void> delete(@PathVariable Long id) { meetups.delete(get(id)); return ApiResponse.ok("Meetup deleted", null); }

@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
 import { businessApi } from "../../api/businessApi";
+import PasswordField from "../../components/PasswordField.jsx";
 const emptyBusiness = {
   businessName: "",
   ownerName: "",
@@ -138,7 +139,7 @@ export default function Profile() {
           </div>
         </div>
       </section>
-      <div className="flex max-w-full gap-2 overflow-x-auto rounded-full bg-[#111] p-2">
+      <div className="flex w-fit max-w-full gap-2 overflow-x-auto rounded-full bg-[#111] p-1.5">
         {[
           ["personal", "Personal profile", UserCircle],
           ["business", "Business profile", Briefcase],
@@ -147,7 +148,7 @@ export default function Profile() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-bold ${tab === key ? "bg-red-600 text-white" : "text-slate-400 hover:text-white"}`}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold ${tab === key ? "bg-red-600 text-white" : "text-slate-400 hover:text-white"}`}
           >
             <Icon size={17} />
             {label}
@@ -386,15 +387,7 @@ function Field({
       <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
-      <input
-        className="field"
-        type={type}
-        value={value}
-        disabled={disabled}
-        required={required}
-        minLength={minLength}
-        onChange={(e) => onChange?.(e.target.value)}
-      />
+      {type === "password" ? <PasswordField value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} /> : <input className="field" type={type} value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} />}
     </label>
   );
 }

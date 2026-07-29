@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { AuthFrame } from "./Login.jsx";
+import PasswordField from "../../components/PasswordField.jsx";
 
 export default function Register() {
   const { register, loading } = useAuth();
@@ -19,9 +20,10 @@ export default function Register() {
   }
   return <AuthFrame title="Create your account" footer={<Link to="/login" className="font-semibold text-red-600">Already registered?</Link>}>
     <form onSubmit={submit} className="space-y-4">
-      {["fullName", "email", "mobile", "password"].map((key) => (
-        <input key={key} required className="field" type={key === "password" ? "password" : key === "email" ? "email" : key === "mobile" ? "tel" : "text"} minLength={key === "password" ? 8 : undefined} placeholder={key === "fullName" ? "Full name" : key[0].toUpperCase() + key.slice(1)} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+      {["fullName", "email", "mobile"].map((key) => (
+        <input key={key} name={key} required className="field" type={key === "email" ? "email" : key === "mobile" ? "tel" : "text"} placeholder={key === "fullName" ? "Full name" : key[0].toUpperCase() + key.slice(1)} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
       ))}
+      <PasswordField name="password" required placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
       <button disabled={loading} className="btn-primary w-full">Register</button>
     </form>
   </AuthFrame>;

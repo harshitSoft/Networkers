@@ -45,8 +45,8 @@ public class AdminController {
     @GetMapping("/users") public ApiResponse<?> users() { return ApiResponse.ok("Users", users.findByRole(Role.USER)); }
     @Transactional
     @PostMapping("/users/create") public ApiResponse<?> createUser(@RequestBody CreateUserRequest request) {
+        validateUserRequest(request, true);
         if (users.existsByEmail(request.email())) throw new IllegalArgumentException("Email already registered");
-        if (request.password() == null || request.password().length() < 8) throw new IllegalArgumentException("Password must be at least 8 characters");
         JoinRequest joinRequest = request.joinRequestId() == null ? null : joinRequests.findById(request.joinRequestId()).orElseThrow(() -> new EntityNotFoundException("Join request not found"));
         Long assignedChapterId = request.chapterId() != null ? request.chapterId() : joinRequest != null && joinRequest.getChapter() != null ? joinRequest.getChapter().getId() : null;
         if (assignedChapterId == null) throw new IllegalArgumentException("A chapter must be assigned before creating a user. Create a chapter first if none are available.");
@@ -60,6 +60,7 @@ public class AdminController {
         return ApiResponse.ok("User created and login credentials emailed", AuthController.userDto(saved));
     }
     @PutMapping("/users/{id}") public ApiResponse<?> updateUser(@PathVariable Long id, @RequestBody CreateUserRequest request) {
+        validateUserRequest(request, false);
         User user = users.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
         if (user.getRole() == Role.ADMIN || user.getRole() == Role.SUPER_ADMIN) throw new IllegalStateException("Admin accounts are protected; use My Profile for personal changes");
         users.findByEmail(request.email()).filter(existing -> !existing.getId().equals(id)).ifPresent(existing -> { throw new IllegalArgumentException("Email already registered"); });
@@ -93,6 +94,13 @@ public class AdminController {
                 "pendingJoinRequests", joinRequests.countByStatus(JoinRequestStatus.PENDING));
     }
     private User manageableUser(Long id) { User user = users.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found")); if (user.getRole() == Role.ADMIN || user.getRole() == Role.SUPER_ADMIN) throw new IllegalStateException("Admin accounts are protected"); return user; }
+    private void validateUserRequest(CreateUserRequest request, boolean passwordRequired) {
+        if (request.fullName() == null || request.fullName().isBlank()) throw new IllegalArgumentException("Full name is required");
+        if (request.email() == null || !request.email().trim().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) throw new IllegalArgumentException("Enter a valid email address");
+        if (request.mobile() == null || !request.mobile().matches("^\\d{10}$")) throw new IllegalArgumentException("Mobile number must contain exactly 10 digits");
+        if (passwordRequired && (request.password() == null || request.password().length() < 8)) throw new IllegalArgumentException("Password must be at least 8 characters");
+        if (request.password() != null && !request.password().isBlank() && request.password().length() < 8) throw new IllegalArgumentException("Password must be at least 8 characters");
+    }
     private void applyUser(User user, CreateUserRequest request, Long chapterId) {
         Chapter chapter = chapterId == null ? null : chapters.findById(chapterId).orElseThrow(() -> new EntityNotFoundException("Chapter not found"));
         user.setFullName(request.fullName());

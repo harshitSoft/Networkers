@@ -22,7 +22,7 @@ public class JoinRequestController {
         r.setChapter(chapters.findById(body.chapterId()).filter(c -> c.isActive()).orElseThrow(() -> new EntityNotFoundException("Selected chapter is not available")));
         return ApiResponse.ok("Your request has been sent to the Networkers admin",requests.save(r));
     }
-    @GetMapping("/admin/join-requests") public ApiResponse<List<JoinRequest>> all(){return ApiResponse.ok("Join requests",requests.findAllByOrderByCreatedAtDesc());}
+    @GetMapping("/admin/join-requests") public ApiResponse<List<JoinRequest>> all(){return ApiResponse.ok("Join requests",requests.findByStatusInOrderByCreatedAtDesc(List.of(JoinRequestStatus.PENDING,JoinRequestStatus.ACCEPTED)));}
     @PutMapping("/admin/join-requests/{id}/accept") public ApiResponse<JoinRequest> accept(@PathVariable Long id){JoinRequest r=get(id);if(r.getStatus()!=JoinRequestStatus.PENDING)throw new IllegalStateException("Only pending requests can be accepted");r.setStatus(JoinRequestStatus.ACCEPTED);return ApiResponse.ok("Request accepted",requests.save(r));}
     @PutMapping("/admin/join-requests/{id}/reject") public ApiResponse<JoinRequest> reject(@PathVariable Long id){JoinRequest r=get(id);if(r.getStatus()==JoinRequestStatus.ACCOUNT_CREATED)throw new IllegalStateException("An account has already been created");r.setStatus(JoinRequestStatus.REJECTED);return ApiResponse.ok("Request rejected",requests.save(r));}
     private JoinRequest get(Long id){return requests.findById(id).orElseThrow(()->new EntityNotFoundException("Join request not found"));}

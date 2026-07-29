@@ -79,6 +79,11 @@ public class MeetingAutomationService {
 
     @Transactional public MeetingView mine(User user,YearMonth ym){MeetingParticipant p=participants.findByGroupYearAndGroupMonthAndMember(ym.getYear(),ym.getMonthValue(),user).orElseThrow(()->new EntityNotFoundException("No monthly meeting assigned"));MonthlyMeeting m=meetings.findByGroupId(p.getGroup().getId()).orElseThrow();ensurePairs(m);return view(m,user);}
     @Transactional public List<MeetingView> overview(Long chapterId,YearMonth ym){List<MonthlyMeeting> result=meetings.findByGroupChapterIdAndGroupYearAndGroupMonthOrderByGroupGroupNumber(chapterId,ym.getYear(),ym.getMonthValue());result.forEach(this::ensurePairs);return result.stream().map(m->view(m,null)).toList();}
+    @Transactional public void deleteGroup(Long meetingId){
+        MonthlyMeeting meeting=find(meetingId);Long groupId=meeting.getGroup().getId();
+        posts.unlinkMeetingGroup(groupId);comments.deleteByMeetingGroupId(groupId);pairs.deleteByMeetingGroupId(groupId);
+        meetings.deleteByGroupId(groupId);participants.deleteByGroupId(groupId);groups.deleteById(groupId);
+    }
 
     @Transactional
     public MeetingView edit(Long id,User actor,UpdateRequest r,boolean admin){
@@ -86,6 +91,8 @@ public class MeetingAutomationService {
         boolean detailsChange=r.date()!=null||r.endDate()!=null||r.time()!=null||r.venue()!=null;
         if(!admin&&detailsChange&&m.getEditCount()>=m.getMaxEdits())throw new SecurityException("Meeting edit limit reached");
         LocalDate start=r.date()!=null?r.date():m.getScheduledDate(), end=r.endDate()!=null?r.endDate():effectiveEnd(m);
+        LocalDate today=LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        if((r.date()!=null||r.endDate()!=null)&&(start.isBefore(today)||end.isBefore(today)))throw new IllegalArgumentException("Meeting dates cannot be in the past");
         YearMonth assigned=YearMonth.of(m.getGroup().getYear(),m.getGroup().getMonth());
         if(!YearMonth.from(start).equals(assigned)||!YearMonth.from(end).equals(assigned))throw new IllegalArgumentException("Meeting window must remain in the assigned month");
         if(end.isBefore(start))throw new IllegalArgumentException("End date cannot be before start date");
@@ -111,9 +118,12 @@ public class MeetingAutomationService {
         if(pair.isCompleted())throw new IllegalStateException("This one-to-one meeting has already been completed");
         if(metOn==null||metOn.isBefore(m.getScheduledDate())||metOn.isAfter(effectiveEnd(m)))throw new IllegalArgumentException("Meeting date must be inside the group meeting window");
         if(metOn.isAfter(LocalDate.now(ZoneId.of("Asia/Kolkata"))))throw new IllegalArgumentException("Meeting date cannot be in the future");
-        if(photo==null||photo.isEmpty())throw new IllegalArgumentException("A meeting photo is required");
-        String type=Optional.ofNullable(photo.getContentType()).orElse("");if(!type.startsWith("image/"))throw new IllegalArgumentException("Only image files are allowed");
-        pair.setMetOn(metOn);pair.setNotes(notes==null?null:notes.trim());pair.setPhotoUrl(media.uploadPairMeetingPhoto(photo,meetingId,actor.getId()));pair.setCompletedBy(actor);pair.setCompletedAt(LocalDateTime.now());
+        String photoUrl=null;
+        if(photo!=null&&!photo.isEmpty()){
+            String type=Optional.ofNullable(photo.getContentType()).orElse("");if(!type.startsWith("image/"))throw new IllegalArgumentException("Only image files are allowed");
+            photoUrl=media.uploadPairMeetingPhoto(photo,meetingId,actor.getId());
+        }
+        pair.setMetOn(metOn);pair.setNotes(notes==null?null:notes.trim());pair.setPhotoUrl(photoUrl);pair.setCompletedBy(actor);pair.setCompletedAt(LocalDateTime.now());
         PairMeeting saved=pairs.save(pair);User other=pair.getMemberOne().getId().equals(actor.getId())?pair.getMemberTwo():pair.getMemberOne();
         notifications.notify(other,"One-to-one meeting completed",actor.getFullName()+" recorded your meeting on "+metOn+".");
         if(!m.getGroup().getHost().getId().equals(actor.getId()))notifications.notify(m.getGroup().getHost(),"Group progress updated",actor.getFullName()+" completed a one-to-one meeting.");

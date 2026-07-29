@@ -63,6 +63,8 @@ public class UserDeletionService {
         entityManager.clear();
         users.deleteById(id);
         users.flush();
+        entityManager.clear();
+        if (users.existsById(id)) throw new IllegalStateException("User could not be permanently deleted");
     }
 
     private void execute(String sql, Long id) {

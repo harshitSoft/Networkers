@@ -56,8 +56,8 @@ export default function GiveReferral() {
           <input className="field" placeholder="Work category" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} />
           <input className="field" placeholder="Location" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })} />
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={17} />
-            <input className="field pl-9" placeholder="Name or service" value={filters.name} onChange={(e) => setFilters({ ...filters, name: e.target.value })} />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+            <input className="field !pl-10" placeholder="Name or service" value={filters.name} onChange={(e) => setFilters({ ...filters, name: e.target.value })} />
           </div>
         </div>
       </div>

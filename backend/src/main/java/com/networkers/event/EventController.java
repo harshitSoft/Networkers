@@ -67,6 +67,8 @@ public class EventController {
 
     @PutMapping("/api/admin/events/{id}")
     public ApiResponse<Event> update(@PathVariable Long id, @RequestBody EventRequest request) {
+        if (request.eventDate() == null) throw new IllegalArgumentException("Event date is required");
+        if (request.eventDate().isBefore(today())) throw new IllegalArgumentException("Event date cannot be in the past");
         Event event = find(id);
         apply(event, request);
         return ApiResponse.ok("Event updated", events.save(event));

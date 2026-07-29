@@ -24,7 +24,7 @@ export default function UserEvents() {
 function EventSection({ title, events, gallery = false, rsvps={}, onRespond }) {
   return (
     <section className="space-y-3">
-      <h3 className="section-title">{title}</h3>
+      <h3 className="section-title !text-brand-primary">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2">
         {events.map((event) => (
           <GlowCard as="article" key={event.id}>

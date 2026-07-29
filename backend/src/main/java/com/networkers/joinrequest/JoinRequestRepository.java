@@ -4,5 +4,6 @@ import java.util.List;
 public interface JoinRequestRepository extends JpaRepository<JoinRequest,Long>{
     boolean existsByEmailIgnoreCaseAndStatusIn(String email, List<JoinRequestStatus> statuses);
     List<JoinRequest> findAllByOrderByCreatedAtDesc();
+    List<JoinRequest> findByStatusInOrderByCreatedAtDesc(List<JoinRequestStatus> statuses);
     long countByStatus(JoinRequestStatus status);
 }

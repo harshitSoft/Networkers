@@ -1,0 +1,45 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "ap-south-1"
+    NETWORKERS_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-backend-app"
+
+phases:
+  pre_build:
+    commands:
+      - set -e
+
+      - echo "🔹 Checking Docker status..."
+      - docker info
+
+      - echo "🔹 Logging into AWS ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $NETWORKERS_ECR_REPO
+
+  build:
+    commands:
+      - set -e
+
+      - echo "🔹 Building Networkers Docker image..."
+
+      - |
+        docker build \
+        --build-arg APP_VERSION="$TAG_NAME" \
+        --build-arg DEV_ENV="$ENVIRONMENT" \
+        -t $BACKEND_TAG \
+        ./backend
+
+  post_build:
+    commands:
+      - set -e
+
+      - echo "🔹 Tagging Docker image..."
+
+      - docker tag \
+        $BACKEND_TAG \
+        $NETWORKERS_ECR_REPO:$BACKEND_TAG
+
+      - echo "🔹 Pushing Docker image to AWS ECR..."
+
+      - docker push \
+        $NETWORKERS_ECR_REPO:$BACKEND_TAG

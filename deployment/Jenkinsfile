@@ -1,0 +1,549 @@
+/* groovylint-disable DuplicateListLiteral, DuplicateStringLiteral, LineLength, NestedBlockDepth, VariableTypeRequired */
+pipeline {
+    agent any
+
+    environment {
+        // Credentials
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+        AWS_ACCOUNT_ID = credentials('aws-rahul-account-id')
+        EC2_INSTANCE = credentials('aws-tobuu-app-user-with-ip')
+        ECR_REPOSITORY = 'networkers-backend-app'
+        GITHUB_PAT = credentials('hrms-git-token')
+        CODEBUILD_PROJECT_NAME = 'Networkers-Build'
+        AWS_REGION = 'ap-south-1'
+
+        // GIT
+        // (Using GITHUB_PAT in the URL)
+        GIT_REPO = "https://${GITHUB_PAT}@github.com/harshitSoft/Networkers.git"
+
+        // Production ports
+        BACKEND_PORT = '5200'
+        BACKEND_SECONDARY_PORT = '5201'
+        // Staging ports
+        STAGING_BACKEND_PORT = '6200'
+        STAGING_BACKEND_SECONDARY_PORT = '6201'
+
+        // Workspace and health checks
+        BASE_DIR = "/home/jenkins/networkers"
+        HEALTH_BACKEND_PATH = "actuator/health"
+
+        JENKINS_EC2_TOBUU_APP_SERVER = 'jenkins-ssh-key-tobuu-app-server'
+        
+
+        // S3 bucket for your env files
+        S3_ENV_BUCKET = 'secure-env-files-itsoftlab'
+        // Backend keys
+        BACKEND_PRODUCTION_ENV_S3_KEY = 'networkers-backend-production-env'
+        BACKEND_STAGING_ENV_S3_KEY = 'networkers-backend-staging-env'
+
+        APP_NAME = "networkers"
+        NGINX_PRODUCTION_CONF = "networkers-production.conf"
+        NGINX_STAGING_CONF = "networkers-staging.conf"
+    }
+
+    stages {
+        stage('Validate Git Tag') {
+            steps {
+                script {
+                    // Use tag(s) pointing at HEAD to avoid picking an unrelated latest tag
+                    env.TAG_NAME = sh(script: 'git tag --points-at HEAD || echo ""', returnStdout: true).trim()
+
+                    if (!env.TAG_NAME) {
+                        error '❌ No tag detected! Deployment only triggers on tag creation.'
+                    }
+                    echo "📌 Detected Tag: ${env.TAG_NAME}"
+
+                    // Extract branch from which the tag originated.
+                    env.BRANCH = sh(script: "git branch -r --contains ${env.TAG_NAME} | grep -Eo 'origin/(main|staging|hotfix)' | head -n 1 | cut -d '/' -f2 || echo ''", returnStdout: true).trim()
+                    if (!env.BRANCH) {
+                        error "❌ Invalid tag! Tags must be from 'main', 'staging', or 'hotfix' branches."
+                    }
+
+                    if (env.BRANCH == 'main' && env.TAG_NAME ==~ /^v\d+\.\d+\.\d+$/) {
+                        env.ENVIRONMENT = 'production'
+                    } else if (env.BRANCH == 'staging' && env.TAG_NAME ==~ /^v\d+\.\d+\.\d+-staging$/) {
+                        env.ENVIRONMENT = 'staging'
+                    } else if (env.BRANCH == 'hotfix' && env.TAG_NAME ==~ /^hotfix-\d+\.\d+\.\d+$/) {
+                        env.ENVIRONMENT = 'production'
+                    } else {
+                        error "❌ Invalid tag format for branch '${env.BRANCH}'."
+                    }
+                    echo "🌍 Deployment Environment: ${env.ENVIRONMENT}"
+                }
+            }
+        }
+
+        stage('Create Docker Tags') {
+            steps {
+                script {
+                    env.BACKEND_TAG = "backend-${env.ENVIRONMENT}-${env.TAG_NAME}"
+                    echo "🛠️ Backend Tag: ${env.BACKEND_TAG}"
+                }
+            }
+        }
+
+        stage('Determine secret key file') {
+            steps {
+                script {
+                    // Determine which S3 keys to use based on the environment
+                    if (env.ENVIRONMENT == 'production') {
+                        env.BACKEND_SECRET_KEY = "${env.BACKEND_PRODUCTION_ENV_S3_KEY}.env"
+                    } else {
+                        env.BACKEND_SECRET_KEY = "${env.BACKEND_STAGING_ENV_S3_KEY}.env"
+                    }
+
+                    echo "Using backend env file: ${env.BACKEND_SECRET_KEY}"
+                }
+            }
+        }
+
+        stage('Check and Trigger AWS CodeBuild') {
+            steps {
+                script {
+                    echo "🚀 Checking if images exist in ECR for tags: ${env.BACKEND_TAG}"
+                    def backendExists = sh(script: """
+                        aws ecr describe-images --repository-name ${ECR_REPOSITORY} \
+                        --image-ids imageTag=${env.BACKEND_TAG} \
+                        --region ${AWS_REGION} > /dev/null 2>&1
+                    """, returnStatus: true) == 0
+
+                    if (backendExists) {
+                        env.BUILD_ID = 'SKIPPED'
+                        echo '✅ Backend image already exist in ECR. Skipping CodeBuild trigger.'
+                    } else {
+                        echo '🚀 Triggering AWS CodeBuild for missing images...'
+                        env.BUILD_ID = sh(script: """
+                            aws codebuild start-build --project-name ${CODEBUILD_PROJECT_NAME} \
+                            --region ${AWS_REGION} \
+                            --source-version ${env.TAG_NAME} \
+                            --environment-variables-override \
+                                name=TAG_NAME,value='${env.TAG_NAME}',type=PLAINTEXT \
+                                name=ENVIRONMENT,value='${env.ENVIRONMENT}',type=PLAINTEXT \
+                                name=BACKEND_TAG,value='${env.BACKEND_TAG}',type=PLAINTEXT \
+                            --query 'build.id' --output text
+                        """, returnStdout: true).trim()
+                        if (!env.BUILD_ID?.trim()) {
+                            error '❌ AWS CodeBuild failed to start. No BUILD_ID received.'
+                        }
+                        echo "Build started with ID: ${env.BUILD_ID}"
+                    }
+                }
+            }
+        }
+
+        stage('Wait for AWS CodeBuild Completion') {
+            when {
+                expression { env.BUILD_ID && env.BUILD_ID != 'SKIPPED' }
+            }
+            steps {
+                script {
+                    echo '⏳ Waiting for AWS CodeBuild to complete...'
+                    def buildStatus = ''
+                    def logStreamName = sh(script: """
+                        aws codebuild batch-get-builds --ids ${env.BUILD_ID} --region ${AWS_REGION} \
+                        --query 'builds[0].logs.streamName' --output text
+                    """, returnStdout: true).trim()
+
+                    if (!logStreamName) {
+                        error '❌ Unable to fetch CloudWatch Log Stream for CodeBuild.'
+                    }
+                    echo "🔗 Streaming logs from CloudWatch Log Group: /aws/codebuild/${env.CODEBUILD_PROJECT_NAME}"
+                    echo "📄 Log Stream Name: ${logStreamName}"
+                    def nextToken = ''
+
+                    while (!['SUCCEEDED', 'FAILED', 'STOPPED', 'FAULT', 'TIMED_OUT'].contains(buildStatus)) {
+                        sleep 10
+                        def logCommand = """
+                            aws logs get-log-events --log-group-name "/aws/codebuild/${env.CODEBUILD_PROJECT_NAME}" \
+                            --log-stream-name "${logStreamName}" --region ${AWS_REGION} --output json \
+                            ${nextToken ? "--next-token '${nextToken}'" : ''}
+                        """
+                        def logResult = sh(script: logCommand, returnStdout: true).trim()
+                        if (logResult) {
+                            def logJson = readJSON(text: logResult)
+                            logJson.events.each { event ->
+                                echo event.message
+                            }
+                            nextToken = logJson.nextForwardToken ?: nextToken
+                        }
+                        buildStatus = sh(script: """
+                            aws codebuild batch-get-builds --ids ${env.BUILD_ID} --region ${AWS_REGION} \
+                            --query 'builds[0].buildStatus' --output text
+                        """, returnStdout: true).trim()
+                        echo "Build status: ${buildStatus}"
+                    }
+                    if (buildStatus == 'SUCCEEDED') {
+                        echo '✅ AWS CodeBuild completed successfully.'
+                    } else {
+                        error '❌ AWS CodeBuild failed.'
+                    }
+                }
+            }
+        }
+
+       stage('Clone and Configure on Remote Host') {
+            steps {
+                script {
+                    def output = sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                        sh(
+                            script: """
+                                ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
+                                set -e
+
+                                BASE_DIR="${BASE_DIR}"
+                                ENV="${env.ENVIRONMENT}"
+                                TAG="${env.TAG_NAME}"
+                                REPO_URL="${GIT_REPO}"
+                                WORKSPACE_DIR="\\$BASE_DIR/\\$ENV"
+
+                                mkdir -p "\\$WORKSPACE_DIR"
+                                cd "\\$WORKSPACE_DIR"
+
+                                echo "🔄 Cloning repository for tag: \\$TAG"
+
+                                TEMP_DIR=\\$(mktemp -d)
+
+                                git clone --branch "\\$TAG" --depth 1 "\\$REPO_URL" "\\$TEMP_DIR" || {
+                                    echo "❌ Failed to clone repository."
+                                    exit 1
+                                }
+
+                                echo "🔐 Logging into AWS ECR"
+
+                                AWS_ACCOUNT_ID=\\$(aws sts get-caller-identity --query Account --output text)
+
+                                ECR_URL="\\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+
+                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \\$ECR_URL
+
+                                if [ -z "${env.BACKEND_SECRET_KEY}" ]; then
+                                    echo "❌ Backend secret key not found."
+                                    exit 1
+                                fi
+
+                                ####################################################################
+                                # Blue-Green Deployment
+                                ####################################################################
+
+                                CURRENT_COLOR=\\$(docker ps \
+                                    --filter "name=networkers_backend_\\${ENV}" \
+                                    --format "{{.Names}}" \
+                                    | grep -Eo "(blue|green)" \
+                                    | head -n1)
+
+                                echo "Current Color : \\$CURRENT_COLOR"
+
+                                if [ "\\$CURRENT_COLOR" = "blue" ]; then
+
+                                    NEW_COLOR="green"
+
+                                    if [ "\\$ENV" = "staging" ]; then
+                                        HOST_BACKEND_PORT=${STAGING_BACKEND_SECONDARY_PORT}
+                                    else
+                                        HOST_BACKEND_PORT=${BACKEND_SECONDARY_PORT}
+                                    fi
+
+                                elif [ "\\$CURRENT_COLOR" = "green" ]; then
+
+                                    NEW_COLOR="blue"
+
+                                    if [ "\\$ENV" = "staging" ]; then
+                                        HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                    else
+                                        HOST_BACKEND_PORT=${BACKEND_PORT}
+                                    fi
+
+                                else
+
+                                    echo "⚠️ No running backend container found."
+
+                                    NEW_COLOR="blue"
+
+                                    if [ "\\$ENV" = "staging" ]; then
+                                        HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                    else
+                                        HOST_BACKEND_PORT=${BACKEND_PORT}
+                                    fi
+
+                                fi
+
+                                TARGET_DIR="\\$WORKSPACE_DIR/\\$NEW_COLOR"
+
+                                mkdir -p "\\$TARGET_DIR"
+                                mkdir -p "\\$TARGET_DIR/backend"
+                                
+                                if [ ! -f "$TEMP_DIR/deployment/compose.yml" ]; then
+                                    echo "❌ deployment/compose.yml not found."
+                                    exit 1
+                                fi
+
+
+                                cp -f "\\$TEMP_DIR/deployment/compose.yml" "\\$TARGET_DIR/"
+
+                                echo "🔍 Checking if backend env file exists in S3..."
+
+                                echo "🔍 Checking backend env file..."
+
+                                if ! aws s3 ls \
+                                "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
+                                --region ${AWS_REGION}; then
+                                    echo "❌ Backend env file not found."
+                                    exit 1
+                                fi
+
+                                echo "✅ Backend env file found."
+                                if [ $? -ne 0 ]; then
+                                    echo "❌ Backend env file not found in S3."
+                                    exit 1
+                                fi
+
+                                echo "✅ Backend env file found."
+
+
+                                echo "🔑 Downloading backend environment file..."
+
+                                aws s3 cp \
+                                    "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
+                                    "\\$TARGET_DIR/backend/.env" \
+                                    --region ${AWS_REGION}
+
+                                echo "📝 Creating deployment .env"
+
+                                cat > "\\$TARGET_DIR/.env" <<EOF
+                                AWS_ACCOUNT_ID=\\$AWS_ACCOUNT_ID
+                                AWS_REGION=${AWS_REGION}
+                                ECR_REPOSITORY=${ECR_REPOSITORY}
+                                BACKEND_TAG=${env.BACKEND_TAG}
+                                HOST_BACKEND_PORT=\\$HOST_BACKEND_PORT
+                                COLOR=\\$NEW_COLOR
+                                ENVIRONMENT=\\$ENV
+                                EOF
+
+                                cd "\\$TARGET_DIR"
+
+                                echo "📥 Pulling Docker image..."
+
+                                docker compose \
+                                    --env-file .env \
+                                    -f compose.yml \
+                                    pull
+
+                                echo "✅ Docker image pulled successfully."
+
+                                rm -rf "\\$TEMP_DIR"
+
+                                echo "====VARIABLES_START===="
+                                echo "WORKSPACE_DIR=\\$WORKSPACE_DIR"
+                                echo "CURRENT_COLOR=\\$CURRENT_COLOR"
+                                echo "NEW_COLOR=\\$NEW_COLOR"
+                                echo "HOST_BACKEND_PORT=\\$HOST_BACKEND_PORT"
+                                echo "TARGET_DIR=\\$TARGET_DIR"
+                                echo "====VARIABLES_END===="
+                                '
+                            """,
+                            returnStdout: true
+                        ).trim()
+                    }
+
+                    echo "Full SSH Output:\n${output}"
+
+                    def startMarker = "====VARIABLES_START===="
+                    def endMarker = "====VARIABLES_END===="
+
+                    if (!output.contains(startMarker) || !output.contains(endMarker)) {
+                        error("❌ Failed to capture deployment variables from remote host.")
+                    }
+
+                    def markerBlock = output.split(startMarker)[1].split(endMarker)[0].trim()
+
+                    def variables = [:]
+
+                    markerBlock.split("\\n").each { line ->
+                        if (line.contains("=")) {
+                            def parts = line.split("=", 2)
+                            variables[parts[0].trim()] = parts[1].trim()
+                        }
+                    }
+
+                    env.CURRENT_COLOR     = variables.CURRENT_COLOR
+                    env.NEW_COLOR         = variables.NEW_COLOR
+                    env.HOST_BACKEND_PORT = variables.HOST_BACKEND_PORT
+                    env.WORKSPACE_DIR     = variables.WORKSPACE_DIR
+                    env.TARGET_DIR        = variables.TARGET_DIR
+
+                    echo "Captured Variables : ${variables}"
+                    echo "HOST_BACKEND_PORT=$HOST_BACKEND_PORT"
+                    echo "Backend URL: http://127.0.0.1:$HOST_BACKEND_PORT"
+                }
+            }
+        }
+
+        stage('Deploy Using Blue-Green Deployment') {
+            steps {
+                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
+                        set -e
+
+                        PROJECT_NAME="${env.APP_NAME}_${env.ENVIRONMENT}_${env.NEW_COLOR}"
+                        TARGET_DIR="${env.TARGET_DIR}"
+
+                        echo "🚀 Deploying to ${env.NEW_COLOR} environment with project: \$PROJECT_NAME"
+
+                        cd "\$TARGET_DIR"
+
+                        echo "Running containers:"
+                        docker ps
+
+                        echo "Container logs (last 50 lines):"
+                        docker compose \
+                            -p "\$PROJECT_NAME" \
+                            --env-file .env \
+                            -f compose.yml \
+                            up -d
+
+                        echo "✅ Deployment completed."
+
+                        docker ps
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Switch Nginx to New Deployment') {
+            steps {
+                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
+                        set -e
+
+                        ENV="${env.ENVIRONMENT}"
+
+                        echo "⏳ Waiting 20 seconds for backend to initialize..."
+                        sleep 20
+
+                        CHECKS=0
+                        MAX_CHECKS=20
+                        DELAY=5
+
+                        set +e
+                        while [ \$CHECKS -lt \$MAX_CHECKS ]; do
+
+                            echo "🔍 Checking backend health at:"
+                            echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}/${HEALTH_BACKEND_PATH}" 
+                            BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
+                                http://127.0.0.1:${env.HOST_BACKEND_PORT}/$HEALTH_BACKEND_PATH)
+
+                            echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
+
+                            if [ "\$BACKEND_STATUS" -eq 200 ]; then
+                                echo "✅ Backend health check passed."
+                                break
+                            fi
+
+                            CHECKS=\$((CHECKS+1))
+                            sleep \$DELAY
+                        done
+                        set -e
+
+                        if [ \$CHECKS -eq \$MAX_CHECKS ]; then
+                            echo "❌ Backend health check failed after \$MAX_CHECKS attempts."
+                            exit 1
+                        fi
+
+                        echo "Switching Nginx to backend port ${env.HOST_BACKEND_PORT}"
+
+                        if [ "\$ENV" = "staging" ]; then
+                            sudo sed -i \
+                            "s/\\(server 127.0.0.1:\\)\\(${STAGING_BACKEND_PORT}\\|${STAGING_BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
+                            /etc/nginx/conf.d/$NGINX_STAGING_CONF
+                        else
+                            sudo sed -i \
+                            "s/\\(server 127.0.0.1:\\)\\(${BACKEND_PORT}\\|${BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
+                            /etc/nginx/conf.d/$NGINX_PRODUCTION_CONF
+                        fi
+
+                        echo "🔍 Validating Nginx configuration..."
+                        sudo nginx -t
+
+                        echo "🔄 Reloading Nginx..."
+                        sudo systemctl reload nginx
+
+                        echo "✅ Nginx successfully switched to the new backend deployment."
+
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup Old Containers') {
+            steps {
+                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
+                        set -e
+
+                        if [ "${env.CURRENT_COLOR}" = "blue" ]; then
+                            INACTIVE_COLOR="blue"
+                        elif [ "${env.CURRENT_COLOR}" = "green" ]; then
+                            INACTIVE_COLOR="green"
+                        else
+                            echo "⚠️ No previous backend deployment found. Skipping cleanup."
+                            exit 0
+                        fi
+
+                        PROJECT_NAME="${env.APP_NAME}_${env.ENVIRONMENT}_\$INACTIVE_COLOR"
+                        INACTIVE_DIR="${env.WORKSPACE_DIR}/\$INACTIVE_COLOR"
+
+                        if [ -d "\$INACTIVE_DIR" ]; then
+
+                            echo "🗑️ Cleaning up old backend deployment: \$INACTIVE_COLOR"
+
+                            cd "\$INACTIVE_DIR"
+
+                            docker compose \
+                                -p "\$PROJECT_NAME" \
+                                --env-file .env \
+                                -f compose.yml \
+                                down || echo "⚠️ Failed to stop old containers."
+
+                            docker image prune -af || true
+
+                            echo "✅ Old backend deployment cleaned up successfully."
+
+                        else
+
+                            echo "⚠️ \$INACTIVE_DIR does not exist. Skipping cleanup."
+
+                        fi
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Notify & Finish') {
+            steps {
+                echo "✅ Deployment successful! App is now running with tag: ${TAG_NAME}"
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '🔹 Job Finished'
+        }
+        success {
+            echo '✅ Build and Deployment Successful!'
+        }
+        failure {
+            echo '❌ Build Failed! Check logs.'
+        }
+        unstable {
+            echo '⚠️ Build is unstable! Review the warnings.'
+        }
+    }
+}

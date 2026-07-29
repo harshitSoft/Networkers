@@ -110,8 +110,8 @@ public class AdminController {
     }
     private void applyUser(User user, CreateUserRequest request, Long chapterId) {
         Chapter chapter = chapterId == null ? null : chapters.findById(chapterId).orElseThrow(() -> new EntityNotFoundException("Chapter not found"));
-        user.setFullName(request.fullName());
-        user.setEmail(request.email());
+        user.setFullName(request.fullName().trim());
+        user.setEmail(normalizeEmail(request.email()));
         user.setMobile(request.mobile());
         user.setRole(request.role() == null ? Role.USER : request.role());
         user.setBusinessName(request.businessName());
@@ -125,6 +125,9 @@ public class AdminController {
         user.setSubscriptionStartDate(request.subscriptionStartDate());
         user.setSubscriptionEndDate(request.subscriptionEndDate());
         user.setEnabled(request.enabled() == null || request.enabled());
+    }
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
     public record CreateUserRequest(String fullName, String email, String mobile, String password, Role role,
                                     String businessName, String businessCategory, String services, String location,

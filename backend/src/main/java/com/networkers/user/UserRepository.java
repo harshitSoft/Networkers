@@ -9,8 +9,9 @@ import java.util.Optional;
 import java.time.LocalDate;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("select u from User u where lower(u.email) = lower(:email) and u.deleted = false")
+    @Query("select u from User u where lower(trim(u.email)) = lower(trim(:email)) and u.deleted = false")
     Optional<User> findByEmail(String email);
+    @Query("select (count(u) > 0) from User u where lower(trim(u.email)) = lower(trim(:email)) and u.deleted = false")
     boolean existsByEmail(String email);
     boolean existsByRole(Role role);
     @Query("select u from User u where u.role = :role and u.deleted = false")

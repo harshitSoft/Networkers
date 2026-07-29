@@ -13,7 +13,19 @@ export default function ReferralsReceived() {
   const [completeTarget, setCompleteTarget] = useState(null);
   const [completeForm, setCompleteForm] = useState({ confirmedAmount: "", note: "" });
   const [updatingId, setUpdatingId] = useState(null);
-  const load = () => referralApi.received().then((data) => setItems(Array.isArray(data) ? data : [])).catch(() => setItems([]));
+  const [loading, setLoading] = useState(true);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await referralApi.received();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setItems([]);
+      toast.error(error.response?.data?.message || "Unable to load received referrals");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => { load(); }, []);
   async function update(referral, status) {
     if (status === "COMPLETED") {
@@ -50,7 +62,7 @@ export default function ReferralsReceived() {
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Referral inbox</p><h2 className="mt-1 page-title">Referrals <span className="text-[#E8262A]">Received</span></h2></div>
       {items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} updating={updatingId === r.id} />} />)}
-      {items.length === 0 && <EmptyState icon={Frown} title="No referrals received" message="Referral requests assigned to you will appear here." />}
+      {!loading && items.length === 0 && <EmptyState icon={Frown} title="No referrals received" message="Referral requests assigned to you will appear here." />}
       {completeTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">
           <form onSubmit={complete} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">

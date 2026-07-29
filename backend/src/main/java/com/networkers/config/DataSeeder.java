@@ -4,6 +4,7 @@ import com.networkers.user.Role;
 import com.networkers.user.User;
 import com.networkers.user.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,17 +12,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataSeeder {
+    @Value("${app.seed.admin-email}")
+    private String adminEmail;
+
+    @Value("${app.seed.admin-password}")
+    private String adminPassword;
+
     @Bean
     CommandLineRunner seedSuperAdmin(UserRepository users, PasswordEncoder encoder, JdbcTemplate jdbc) {
         return args -> {
             normalizeLegacyEnumColumns(jdbc);
             migrateLegacyRoles(users);
-            if (!users.existsByEmail("admin@networkers.com")) {
+            if (!users.existsByEmail(adminEmail)) {
                 User admin = new User();
                 admin.setFullName("Networkers Super Admin");
-                admin.setEmail("admin@networkers.com");
+                admin.setEmail(adminEmail);
                 admin.setMobile("9999999999");
-                admin.setPassword(encoder.encode("admin123"));
+                admin.setPassword(encoder.encode(adminPassword));
                 admin.setRole(Role.SUPER_ADMIN);
                 admin.setEnabled(true);
                 users.save(admin);
@@ -63,7 +70,7 @@ public class DataSeeder {
                 user.setRole(Role.USER);
                 users.save(user);
             }
-            if ("admin@networkers.com".equalsIgnoreCase(user.getEmail()) && user.getRole() == Role.ADMIN) {
+            if (adminEmail.equalsIgnoreCase(user.getEmail()) && user.getRole() == Role.ADMIN) {
                 user.setRole(Role.SUPER_ADMIN);
                 users.save(user);
             }

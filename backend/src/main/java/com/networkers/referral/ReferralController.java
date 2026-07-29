@@ -62,6 +62,7 @@ public class ReferralController {
     }
 
     @PostMapping("/api/referrals/give")
+    @Transactional
     public ApiResponse<Referral> give(@Valid @RequestBody ReferralRequest request) {
         requireText(request.clientName(), "Client name");
         requireText(request.clientPhone(), "Client contact number");
@@ -75,14 +76,14 @@ public class ReferralController {
         return direct(request);
     }
 
-    @PostMapping("/api/referrals/direct") public ApiResponse<Referral> direct(@Valid @RequestBody ReferralRequest request) {
+    @PostMapping("/api/referrals/direct") @Transactional public ApiResponse<Referral> direct(@Valid @RequestBody ReferralRequest request) {
         User giver = CurrentUser.get();
         Long receiverId = request.receivedById() != null ? request.receivedById() : request.receiverId();
         if (receiverId == null) throw new IllegalArgumentException("Receiver is required");
         User receiver = users.findById(receiverId).orElseThrow(() -> new EntityNotFoundException("Receiver not found"));
         Referral r = new Referral();
-        r.setReferralType(ReferralType.DIRECT); r.setGivenBy(giver); r.setReceivedBy(receiver); r.setClientName(request.clientName()); r.setClientCompany(request.clientCompany());
-        r.setClientPhone(request.clientPhone()); r.setClientEmail(request.clientEmail()); r.setWorkName(firstText(request.workName(), request.title()));
+        r.setReferralType(ReferralType.DIRECT); r.setGivenBy(giver); r.setReceivedBy(receiver); r.setClientName(cleanText(request.clientName())); r.setClientCompany(cleanText(request.clientCompany()));
+        r.setClientPhone(cleanText(request.clientPhone())); r.setClientEmail(cleanText(request.clientEmail())); r.setWorkName(firstText(request.workName(), request.title()));
         r.setProductOrServiceRequired(request.productOrServiceRequired()); r.setRequirement(request.description() == null ? request.requirement() : request.description());
         r.setWorkTitle(firstText(request.workTitle(), firstText(request.workName(), request.title())));
         r.setWorkCategory(firstText(request.workCategory(), request.productOrServiceRequired()));
@@ -91,8 +92,9 @@ public class ReferralController {
         BigDecimal estimate = request.estimatedPrice() == null ? request.estimatedBudget() : request.estimatedPrice();
         r.setEstimatedBudget(estimate); r.setEstimatedPrice(estimate); r.setPriority(request.priority() == null ? ReferralPriority.MEDIUM : request.priority());
         r.setNotes(request.notes());
+        Referral saved = referrals.save(r);
         notificationService.notify(receiver, "New referral", giver.getFullName() + " shared a client referral with you.");
-        return ApiResponse.ok("Referral shared", referrals.save(r));
+        return ApiResponse.ok("Referral shared", saved);
     }
     @PostMapping("/api/referrals/open") public ApiResponse<OpenReferralPost> open(@Valid @RequestBody OpenReferralRequest request) {
         User poster = CurrentUser.get();
@@ -197,6 +199,11 @@ public class ReferralController {
     }
     private String normalizeFilter(String value) {
         return value == null ? "" : value.trim();
+    }
+    private String cleanText(String value) {
+        if (value == null) return null;
+        String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned;
     }
     private void saveRevenue(Referral referral, BigDecimal amount) {
         ReferralRevenue revenue = revenues.findByReferral(referral).orElseGet(ReferralRevenue::new);

@@ -9,16 +9,14 @@ Networkers is a full-stack subscription-based chapter business community platfor
 - Backend port: `8080`
 - Frontend port: `5173`
 
-## Database
+## Configuration
 
-The backend is currently configured for Neon PostgreSQL:
+Runtime configuration is read from environment variables. The existing local values
+were migrated to ignored `backend/.env` and `frontend/.env` files. Safe templates are
+available as `.env.example` in each application directory.
 
-```properties
-spring.datasource.url=jdbc:postgresql://ep-blue-mouse-atyf8r3f-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channelBinding=require
-spring.datasource.username=neondb_owner
-```
-
-Hibernate creates or updates the application tables automatically. The previous MySQL datasource settings and connector remain commented in the backend configuration, so they can be restored without recreating them.
+Do not commit or upload either real `.env` file. On AWS, set the same backend variable
+names in the service configuration and store secret values in AWS Secrets Manager.
 
 ## Run Backend
 
@@ -37,6 +35,11 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+The backend health endpoint is `GET http://localhost:8080/actuator/health`.
+
+For the container-based AWS deployment procedure, see
+[`AWS_DEPLOYMENT.md`](AWS_DEPLOYMENT.md).
+
 If npm lifecycle scripts fail on Windows because `cmd.exe` is not found, run this once in PowerShell before installing:
 
 ```powershell
@@ -46,11 +49,9 @@ npm install
 
 ## Seeded User
 
-Only the Super Admin is seeded automatically:
-
-- Email: `admin@networkers.com`
-- Password: `admin123`
-- Role: `SUPER_ADMIN`
+Only the Super Admin is seeded automatically. Its email and initial password come
+from `ADMIN_EMAIL` and `ADMIN_PASSWORD`; its role is `SUPER_ADMIN`. Change the
+initial password for production.
 
 No demo chapters, users, referrals, events, opportunities, or community posts are created automatically.
 

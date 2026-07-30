@@ -26,7 +26,7 @@ pipeline {
 
         // Workspace and health checks
         BASE_DIR = "/home/jenkins/networkers"
-        HEALTH_BACKEND_PATH = "actuator/health"
+        HEALTH_BACKEND_PATH = "/api/health"
 
         JENKINS_EC2_TOBUU_APP_SERVER = 'jenkins-ssh-key-tobuu-app-server'
         

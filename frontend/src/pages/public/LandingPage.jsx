@@ -37,11 +37,11 @@ export default function LandingPage() {
   useEffect(() => {
     chapterApi
       .all()
-      .then(setChapters)
+      .then((data) => setChapters(Array.isArray(data) ? data : []))
       .catch(() => setChapters([]));
     eventApi
       .upcoming()
-      .then(setEvents)
+      .then((data) => setEvents(Array.isArray(data) ? data : []))
       .catch(() => setEvents([]));
   }, []);
   useEffect(() => {

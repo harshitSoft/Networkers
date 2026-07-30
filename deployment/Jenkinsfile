@@ -285,9 +285,7 @@ pipeline {
 
                                 echo "🔍 Checking backend env file..."
 
-                                if ! aws s3 ls \
-                                "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" 
-                                --region ${AWS_REGION}; then
+                                if ! aws s3 ls "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" --region ${AWS_REGION}; then
                                     echo "❌ Backend env file not found."
                                     exit 1
                                 fi
@@ -296,10 +294,7 @@ pipeline {
 
                                 echo "🔑 Downloading backend environment file..."
 
-                                aws s3 cp \
-                                    "s3:/${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
-                                    "\$TARGET_DIR/backend/.env" \
-                                    --region ${AWS_REGION}
+                                aws s3 cp "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" "\$TARGET_DIR/backend/.env" --region ${AWS_REGION}
 
                                 echo "📝 Creating deployment .env"
 

@@ -23,23 +23,22 @@ phases:
       - echo "🔹 Building Networkers Docker image..."
 
       - |
-        docker build \
-        --build-arg APP_VERSION="$TAG_NAME" \
-        --build-arg DEV_ENV="$ENVIRONMENT" \
-        -t $BACKEND_TAG \
-        ./backend
+        - docker build --build-arg APP_VERSION="$TAG_NAME" --build-arg DEV_ENV="$ENVIRONMENT" -t "$BACKEND_TAG" ./backend
 
   post_build:
-    commands:
-      - set -e
+  commands:
+    - set -e
 
-      - echo "🔹 Tagging Docker image..."
+    - echo "🔹 Tagging Docker image..."
+    - pwd
+    - ls -la
+    - echo "BACKEND_TAG=$BACKEND_TAG"
+    - echo "NETWORKERS_ECR_REPO=$NETWORKERS_ECR_REPO"
 
-      - docker tag \
-        $BACKEND_TAG \
-        $NETWORKERS_ECR_REPO:$BACKEND_TAG
+    - docker images
 
-      - echo "🔹 Pushing Docker image to AWS ECR..."
+    - docker tag "$BACKEND_TAG" "$NETWORKERS_ECR_REPO:$BACKEND_TAG"
 
-      - docker push \
-        $NETWORKERS_ECR_REPO:$BACKEND_TAG
+    - echo "🔹 Pushing Docker image to AWS ECR..."
+
+    - docker push "$NETWORKERS_ECR_REPO:$BACKEND_TAG"

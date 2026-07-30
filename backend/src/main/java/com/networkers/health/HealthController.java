@@ -13,7 +13,6 @@ import java.util.Map;
 @RestController
 public class HealthController {
     private final JdbcTemplate jdbc;
-
     public HealthController(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }

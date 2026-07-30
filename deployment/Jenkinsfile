@@ -182,191 +182,197 @@ pipeline {
             }
         }
 
-       stage('Clone and Configure on Remote Host') {
-            steps {
-                script {
-                    def output = sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
-                        sh(
-                            script: """
-                                ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
-                                set -e
+        stage('Clone and Configure on Remote Host') {
+        steps {
+            script {
+                def output = sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                    sh(
+                        script: """
+                            ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
+                            set -e
 
-                                BASE_DIR="${BASE_DIR}"
-                                ENV="${env.ENVIRONMENT}"
-                                TAG="${env.TAG_NAME}"
-                                REPO_URL="${GIT_REPO}"
-                                WORKSPACE_DIR="\$BASE_DIR/\$ENV"
+                            BASE_DIR="${BASE_DIR}"
+                            ENV="${env.ENVIRONMENT}"
+                            TAG="${env.TAG_NAME}"
+                            REPO_URL="${GIT_REPO}"
+                            WORKSPACE_DIR="\$BASE_DIR/\$ENV"
 
-                                mkdir -p "\$WORKSPACE_DIR"
-                                cd "\$WORKSPACE_DIR"
+                            mkdir -p "\$WORKSPACE_DIR"
+                            cd "\$WORKSPACE_DIR"
 
-                                echo "🔄 Cloning repository for tag: \$TAG"
+                            echo "🔄 Cloning repository for tag: \$TAG"
 
-                                TEMP_DIR=\$(mktemp -d)
+                            TEMP_DIR=\$(mktemp -d)
 
-                                git clone --branch "\$TAG" --depth 1 "\$REPO_URL" "\$TEMP_DIR" || {
-                                    echo "❌ Failed to clone repository."
-                                    exit 1
-                                }
+                            git clone --branch "\$TAG" --depth 1 "\$REPO_URL" "\$TEMP_DIR" || {
+                                echo "❌ Failed to clone repository."
+                                exit 1
+                            }
 
-                                echo "🔐 Logging into AWS ECR"
+                            echo "🔐 Logging into AWS ECR"
 
-                                AWS_ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text)
+                            AWS_ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text)
 
-                                ECR_URL="\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+                            ECR_URL="\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
 
-                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \$ECR_URL
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \$ECR_URL
 
-                                if [ -z "${env.BACKEND_SECRET_KEY}" ]; then
-                                    echo "❌ Backend secret key not found."
-                                    exit 1
-                                fi
+                            if [ -z "${env.BACKEND_SECRET_KEY}" ]; then
+                                echo "❌ Backend secret key not found."
+                                exit 1
+                            fi
 
-                                ####################################################################
-                                # Blue-Green Deployment
-                                ####################################################################
+                            #########################################################
+                            # Blue-Green Deployment
+                            #########################################################
 
-                                CURRENT_COLOR=\$(docker ps \
-                                    --filter "name=networkers_backend_\${ENV}" \
-                                    --format "{{.Names}}" \
-                                    | grep -Eo "(blue|green)" \
-                                    | head -n1)
+                            CURRENT_COLOR=\$(docker ps \
+                                --filter "name=networkers_backend_\${ENV}" \
+                                --format "{{.Names}}" \
+                                | grep -Eo "(blue|green)" \
+                                | head -n1)
 
-                                echo "Current Color : \$CURRENT_COLOR"
+                            echo "Current Color : \$CURRENT_COLOR"
 
-                                if [ "\$CURRENT_COLOR" = "blue" ]; then
+                            if [ "\$CURRENT_COLOR" = "blue" ]; then
 
-                                    NEW_COLOR="green"
+                                NEW_COLOR="green"
 
-                                    if [ "\$ENV" = "staging" ]; then
-                                        HOST_BACKEND_PORT=${STAGING_BACKEND_SECONDARY_PORT}
-                                    else
-                                        HOST_BACKEND_PORT=${BACKEND_SECONDARY_PORT}
-                                    fi
-
-                                elif [ "\$CURRENT_COLOR" = "green" ]; then
-
-                                    NEW_COLOR="blue"
-
-                                    if [ "\$ENV" = "staging" ]; then
-                                        HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
-                                    else
-                                        HOST_BACKEND_PORT=${BACKEND_PORT}
-                                    fi
-
+                                if [ "\$ENV" = "staging" ]; then
+                                    HOST_BACKEND_PORT=${STAGING_BACKEND_SECONDARY_PORT}
                                 else
-
-                                    echo "⚠️ No running backend container found."
-
-                                    NEW_COLOR="blue"
-
-                                    if [ "\$ENV" = "staging" ]; then
-                                        HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
-                                    else
-                                        HOST_BACKEND_PORT=${BACKEND_PORT}
-                                    fi
-
+                                    HOST_BACKEND_PORT=${BACKEND_SECONDARY_PORT}
                                 fi
 
-                                TARGET_DIR="\$WORKSPACE_DIR/\$NEW_COLOR"
+                            elif [ "\$CURRENT_COLOR" = "green" ]; then
 
-                                mkdir -p "\$TARGET_DIR"
-                                mkdir -p "\$TARGET_DIR/backend"
-                                
-                                if [ ! -f "\$TEMP_DIR/deployment/compose.yml" ]; then
-                                    echo "❌ deployment/compose.yml not found."
-                                    exit 1
+                                NEW_COLOR="blue"
+
+                                if [ "\$ENV" = "staging" ]; then
+                                    HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                else
+                                    HOST_BACKEND_PORT=${BACKEND_PORT}
                                 fi
 
+                            else
 
-                                cp -f "\$TEMP_DIR/deployment/compose.yml" "\$TARGET_DIR/"
+                                echo "⚠️ No running backend container found."
 
-                                echo "🔍 Checking if backend env file exists in S3..."
+                                NEW_COLOR="blue"
 
-                                echo "🔍 Checking backend env file..."
-
-                                if ! aws s3 ls "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" --region ${AWS_REGION}; then
-                                    echo "❌ Backend env file not found."
-                                    exit 1
+                                if [ "\$ENV" = "staging" ]; then
+                                    HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                else
+                                    HOST_BACKEND_PORT=${BACKEND_PORT}
                                 fi
 
-                                echo "✅ Backend env file found."
+                            fi
 
-                                echo "🔑 Downloading backend environment file..."
+                            TARGET_DIR="\$WORKSPACE_DIR/\$NEW_COLOR"
 
-                                aws s3 cp "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" "\$TARGET_DIR/backend/.env" --region ${AWS_REGION}
+                            mkdir -p "\$TARGET_DIR/backend"
 
-                                echo "📝 Creating deployment .env"
+                            if [ ! -f "\$TEMP_DIR/deployment/compose.yml" ]; then
+                                echo "❌ deployment/compose.yml not found."
+                                exit 1
+                            fi
 
-                                cat > "\$TARGET_DIR/.env" <<EOF
-                                AWS_ACCOUNT_ID=\$AWS_ACCOUNT_ID
-                                AWS_REGION=${AWS_REGION}
-                                ECR_REPOSITORY=${ECR_REPOSITORY}
-                                BACKEND_TAG=${env.BACKEND_TAG}
-                                HOST_BACKEND_PORT=\$HOST_BACKEND_PORT
-                                COLOR=\$NEW_COLOR
-                                ENVIRONMENT=\$ENV
-                                EOF
+                            cp -f "\$TEMP_DIR/deployment/compose.yml" "\$TARGET_DIR/"
 
-                                cd "\$TARGET_DIR"
+                            echo "🔍 Checking backend env file..."
 
-                                echo "📥 Pulling Docker image..."
+                            if ! aws s3 ls "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" --region ${AWS_REGION}; then
+                                echo "❌ Backend env file not found in S3."
+                                exit 1
+                            fi
 
-                                docker compose \
-                                    --env-file .env \
-                                    -f compose.yml \
-                                    pull
+                            echo "✅ Backend env file found."
 
-                                echo "✅ Docker image pulled successfully."
+                            echo "🔑 Downloading backend environment file..."
 
-                                rm -rf "\$TEMP_DIR"
+                            aws s3 cp \
+                                "s3://${S3_ENV_BUCKET}/${env.BACKEND_SECRET_KEY}" \
+                                "\$TARGET_DIR/backend/.env" \
+                                --region ${AWS_REGION}
 
-                                echo "====VARIABLES_START===="
-                                echo "WORKSPACE_DIR=\$WORKSPACE_DIR"
-                                echo "CURRENT_COLOR=\$CURRENT_COLOR"
-                                echo "NEW_COLOR=\$NEW_COLOR"
-                                echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT"
-                                echo "TARGET_DIR=\$TARGET_DIR"
-                                echo "====VARIABLES_END===="
-                                '
-                            """,
-                            returnStdout: true
-                        ).trim()
-                    }
+                            echo "📝 Creating deployment .env"
 
-                    echo "Full SSH Output:\n${output}"
+                            echo "AWS_ACCOUNT_ID=\$AWS_ACCOUNT_ID" > "\$TARGET_DIR/.env"
+                            echo "AWS_REGION=${AWS_REGION}" >> "\$TARGET_DIR/.env"
+                            echo "ECR_REPOSITORY=${ECR_REPOSITORY}" >> "\$TARGET_DIR/.env"
+                            echo "BACKEND_TAG=${env.BACKEND_TAG}" >> "\$TARGET_DIR/.env"
+                            echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT" >> "\$TARGET_DIR/.env"
+                            echo "COLOR=\$NEW_COLOR" >> "\$TARGET_DIR/.env"
+                            echo "ENVIRONMENT=\$ENV" >> "\$TARGET_DIR/.env"
 
-                    def startMarker = "====VARIABLES_START===="
-                    def endMarker = "====VARIABLES_END===="
+                            echo "----- .env -----"
+                            cat "\$TARGET_DIR/.env"
+                            echo "----------------"
 
-                    if (!output.contains(startMarker) || !output.contains(endMarker)) {
-                        error("❌ Failed to capture deployment variables from remote host.")
-                    }
+                            cd "\$TARGET_DIR"
 
-                    def markerBlock = output.split(startMarker)[1].split(endMarker)[0].trim()
+                            echo "Current Directory:"
+                            pwd
 
-                    def variables = [:]
+                            echo "Files:"
+                            ls -la
 
-                    markerBlock.split("\\n").each { line ->
-                        if (line.contains("=")) {
-                            def parts = line.split("=", 2)
-                            variables[parts[0].trim()] = parts[1].trim()
-                        }
-                    }
+                            echo "📥 Pulling Docker image..."
 
-                    env.CURRENT_COLOR     = variables.CURRENT_COLOR
-                    env.NEW_COLOR         = variables.NEW_COLOR
-                    env.HOST_BACKEND_PORT = variables.HOST_BACKEND_PORT
-                    env.WORKSPACE_DIR     = variables.WORKSPACE_DIR
-                    env.TARGET_DIR        = variables.TARGET_DIR
+                            docker compose \
+                                --env-file .env \
+                                -f compose.yml \
+                                pull
 
-                    echo "Captured Variables : ${variables}"
-                    echo "HOST_BACKEND_PORT=${env.HOST_BACKEND_PORT}"
-                    echo "Backend URL: http://127.0.0.1:${env.HOST_BACKEND_PORT}"
+                            echo "✅ Docker image pulled successfully."
+
+                            rm -rf "\$TEMP_DIR"
+
+                            echo "====VARIABLES_START===="
+                            echo "WORKSPACE_DIR=\$WORKSPACE_DIR"
+                            echo "CURRENT_COLOR=\$CURRENT_COLOR"
+                            echo "NEW_COLOR=\$NEW_COLOR"
+                            echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT"
+                            echo "TARGET_DIR=\$TARGET_DIR"
+                            echo "====VARIABLES_END===="
+                            '
+                        """,
+                        returnStdout: true
+                    ).trim()
                 }
+
+                echo "Full SSH Output:\n${output}"
+
+                def startMarker = "====VARIABLES_START===="
+                def endMarker = "====VARIABLES_END===="
+
+                if (!output.contains(startMarker) || !output.contains(endMarker)) {
+                    error("❌ Failed to capture deployment variables from remote host.")
+                }
+
+                def markerBlock = output.split(startMarker)[1].split(endMarker)[0].trim()
+
+                def variables = [:]
+
+                markerBlock.split("\\n").each { line ->
+                    if (line.contains("=")) {
+                        def parts = line.split("=", 2)
+                        variables[parts[0].trim()] = parts[1].trim()
+                    }
+                }
+
+                env.CURRENT_COLOR = variables.CURRENT_COLOR
+                env.NEW_COLOR = variables.NEW_COLOR
+                env.HOST_BACKEND_PORT = variables.HOST_BACKEND_PORT
+                env.WORKSPACE_DIR = variables.WORKSPACE_DIR
+                env.TARGET_DIR = variables.TARGET_DIR
+
+                echo "Captured Variables : ${variables}"
+                echo "HOST_BACKEND_PORT=${env.HOST_BACKEND_PORT}"
+                echo "Backend URL: http://127.0.0.1:${env.HOST_BACKEND_PORT}"
             }
         }
-
+    }
         stage('Deploy Using Blue-Green Deployment') {
             steps {
                 sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {

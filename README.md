@@ -94,3 +94,14 @@ DELETE FROM chapter;
 - Admin: `/api/admin/**`
 
 All non-public APIs are JWT protected. Admin-only APIs require `SUPER_ADMIN` or `ADMIN`.
+# Render environment
+
+For a production Render deployment, configure `DB_URL`, `DB_USERNAME`,
+`DB_PASSWORD`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`. Set `JWT_SECRET` to a
+stable random value of at least 32 characters. The backend has a stable
+database-secret-derived fallback so a missing `JWT_SECRET` no longer prevents
+startup, but a dedicated value is recommended.
+
+Mail is optional at startup. To enable credential and notification emails, set
+`MAIL_USERNAME`, `MAIL_PASSWORD` (a Gmail App Password), and `MAIL_FROM`.
+`MAIL_HOST` and `MAIL_PORT` default to `smtp.gmail.com` and `587`.

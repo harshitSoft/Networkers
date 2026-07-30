@@ -24,5 +24,14 @@ api.interceptors.response.use(
   }
 );
 
-export const unwrap = (response) => response.data.data;
+export const unwrap = (response) => {
+  const contentType = response.headers?.["content-type"] || "";
+  if (contentType.includes("text/html")) {
+    throw new Error("The API returned the frontend page instead of JSON. Check the backend API URL.");
+  }
+  if (!response.data || !Object.prototype.hasOwnProperty.call(response.data, "data")) {
+    throw new Error("The API returned an invalid response.");
+  }
+  return response.data.data;
+};
 export default api;

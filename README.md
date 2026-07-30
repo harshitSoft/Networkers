@@ -105,3 +105,8 @@ startup, but a dedicated value is recommended.
 Mail is optional at startup. To enable credential and notification emails, set
 `MAIL_USERNAME`, `MAIL_PASSWORD` (a Gmail App Password), and `MAIL_FROM`.
 `MAIL_HOST` and `MAIL_PORT` default to `smtp.gmail.com` and `587`.
+
+For Vercel, set `BACKEND_API_URL` to the Render backend origin without `/api`
+(for example, `https://your-service.onrender.com`). The included edge proxy
+forwards `https://networkers.family/api/*` to Render while the filesystem-first
+SPA fallback keeps direct page loads and refreshes working.

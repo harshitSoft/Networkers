@@ -8,7 +8,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_ACCOUNT_ID = credentials('aws-rahul-account-id')
         EC2_INSTANCE = credentials('aws-tobuu-app-user-with-ip')
-        ECR_REPOSITORY = 'networkers-backend-app'
+        BACKEND_ECR_REPOSITORY = 'networkers-backend-app'
+        FRONTEND_ECR_REPOSITORY = 'networkers-frontend-app'
         GITHUB_PAT = credentials('hrms-git-token')
         CODEBUILD_PROJECT_NAME = 'Networkers-Build'
         AWS_REGION = 'ap-south-1'
@@ -20,13 +21,20 @@ pipeline {
         // Production ports
         BACKEND_PORT = '5200'
         BACKEND_SECONDARY_PORT = '5201'
+
+        FRONTEND_PORT = '3200'
+        FRONTEND_SECONDARY_PORT = '3201'
+
         // Staging ports
         STAGING_BACKEND_PORT = '6200'
         STAGING_BACKEND_SECONDARY_PORT = '6201'
 
+        STAGING_FRONTEND_PORT = '4200'
+        STAGING_FRONTEND_SECONDARY_PORT = '4201'
+
         // Workspace and health checks
         BASE_DIR = "/home/jenkins/networkers"
-        HEALTH_BACKEND_PATH = "api/health"
+        HEALTH_BACKEND_PATH = "/api/health"
 
         JENKINS_EC2_TOBUU_APP_SERVER = 'jenkins-ssh-key-tobuu-app-server'
         
@@ -78,7 +86,9 @@ pipeline {
             steps {
                 script {
                     env.BACKEND_TAG = "backend-${env.ENVIRONMENT}-${env.TAG_NAME}"
+                    env.FRONTEND_TAG = "frontend-${env.ENVIRONMENT}-${env.TAG_NAME}"
                     echo "🛠️ Backend Tag: ${env.BACKEND_TAG}"
+                    echo "🛠️ Frontend Tag: ${env.FRONTEND_TAG}"
                 }
             }
         }
@@ -93,7 +103,7 @@ pipeline {
                         env.BACKEND_SECRET_KEY = "${env.BACKEND_STAGING_ENV_S3_KEY}.env"
                     }
 
-                    echo "Using backend env file: ${env.BACKEND_SECRET_KEY}"
+                    echo "Using backend env file : ${env.BACKEND_SECRET_KEY}"
                 }
             }
         }
@@ -101,16 +111,24 @@ pipeline {
         stage('Check and Trigger AWS CodeBuild') {
             steps {
                 script {
-                    echo "🚀 Checking if images exist in ECR for tags: ${env.BACKEND_TAG}"
+                    echo "🚀 Checking if Backend and Frontend images exist in ECR..."
                     def backendExists = sh(script: """
-                        aws ecr describe-images --repository-name ${ECR_REPOSITORY} \
+                        aws ecr describe-images \
+                        --repository-name ${BACKEND_ECR_REPOSITORY} \
                         --image-ids imageTag=${env.BACKEND_TAG} \
                         --region ${AWS_REGION} > /dev/null 2>&1
                     """, returnStatus: true) == 0
 
-                    if (backendExists) {
+                    def frontendExists = sh(script: """
+                        aws ecr describe-images \
+                        --repository-name ${FRONTEND_ECR_REPOSITORY} \
+                        --image-ids imageTag=${env.FRONTEND_TAG} \
+                        --region ${AWS_REGION} > /dev/null 2>&1
+                    """, returnStatus: true) == 0
+
+                    if (backendExists && frontendExists) {
                         env.BUILD_ID = 'SKIPPED'
-                        echo '✅ Backend image already exist in ECR. Skipping CodeBuild trigger.'
+                        echo '✅ Backend and Frontend images already exist in ECR.'
                     } else {
                         echo '🚀 Triggering AWS CodeBuild for missing images...'
                         env.BUILD_ID = sh(script: """
@@ -121,6 +139,7 @@ pipeline {
                                 name=TAG_NAME,value='${env.TAG_NAME}',type=PLAINTEXT \
                                 name=ENVIRONMENT,value='${env.ENVIRONMENT}',type=PLAINTEXT \
                                 name=BACKEND_TAG,value='${env.BACKEND_TAG}',type=PLAINTEXT \
+                                name=FRONTEND_TAG,value='${env.FRONTEND_TAG}',type=PLAINTEXT \
                             --query 'build.id' --output text
                         """, returnStdout: true).trim()
                         if (!env.BUILD_ID?.trim()) {
@@ -213,9 +232,9 @@ pipeline {
 
                             AWS_ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text)
 
-                            ECR_URL="\${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+                            ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \$ECR_URL
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin \$ECR_REGISTRY
 
                             if [ -z "${env.BACKEND_SECRET_KEY}" ]; then
                                 echo "❌ Backend secret key not found."
@@ -240,8 +259,10 @@ pipeline {
 
                                 if [ "\$ENV" = "staging" ]; then
                                     HOST_BACKEND_PORT=${STAGING_BACKEND_SECONDARY_PORT}
+                                    HOST_FRONTEND_PORT=${STAGING_FRONTEND_SECONDARY_PORT}
                                 else
                                     HOST_BACKEND_PORT=${BACKEND_SECONDARY_PORT}
+                                    HOST_FRONTEND_PORT=${FRONTEND_SECONDARY_PORT}
                                 fi
 
                             elif [ "\$CURRENT_COLOR" = "green" ]; then
@@ -250,8 +271,11 @@ pipeline {
 
                                 if [ "\$ENV" = "staging" ]; then
                                     HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                    HOST_FRONTEND_PORT=${STAGING_FRONTEND_PORT}
                                 else
                                     HOST_BACKEND_PORT=${BACKEND_PORT}
+                                    HOST_FRONTEND_PORT=${FRONTEND_PORT}
+
                                 fi
 
                             else
@@ -262,8 +286,10 @@ pipeline {
 
                                 if [ "\$ENV" = "staging" ]; then
                                     HOST_BACKEND_PORT=${STAGING_BACKEND_PORT}
+                                    HOST_FRONTEND_PORT=${STAGING_FRONTEND_PORT}
                                 else
                                     HOST_BACKEND_PORT=${BACKEND_PORT}
+                                    HOST_FRONTEND_PORT=${FRONTEND_PORT}
                                 fi
 
                             fi
@@ -271,6 +297,7 @@ pipeline {
                             TARGET_DIR="\$WORKSPACE_DIR/\$NEW_COLOR"
 
                             mkdir -p "\$TARGET_DIR/backend"
+                            mkdir -p "\$TARGET_DIR/frontend"
 
                             if [ ! -f "\$TEMP_DIR/deployment/compose.yml" ]; then
                                 echo "❌ deployment/compose.yml not found."
@@ -295,13 +322,17 @@ pipeline {
                                 "\$TARGET_DIR/backend/.env" \
                                 --region ${AWS_REGION}
 
+
                             echo "📝 Creating deployment .env"
 
                             echo "AWS_ACCOUNT_ID=\$AWS_ACCOUNT_ID" > "\$TARGET_DIR/.env"
                             echo "AWS_REGION=${AWS_REGION}" >> "\$TARGET_DIR/.env"
-                            echo "ECR_REPOSITORY=${ECR_REPOSITORY}" >> "\$TARGET_DIR/.env"
+                            echo "BACKEND_ECR_REPOSITORY=${BACKEND_ECR_REPOSITORY}" >> "\$TARGET_DIR/.env"
+                            echo "FRONTEND_ECR_REPOSITORY=${FRONTEND_ECR_REPOSITORY}" >> "\$TARGET_DIR/.env"
                             echo "BACKEND_TAG=${env.BACKEND_TAG}" >> "\$TARGET_DIR/.env"
+                            echo "FRONTEND_TAG=${env.FRONTEND_TAG}" >> "\$TARGET_DIR/.env"
                             echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT" >> "\$TARGET_DIR/.env"
+                            echo "HOST_FRONTEND_PORT=\$HOST_FRONTEND_PORT" >> "\$TARGET_DIR/.env"
                             echo "COLOR=\$NEW_COLOR" >> "\$TARGET_DIR/.env"
                             echo "ENVIRONMENT=\$ENV" >> "\$TARGET_DIR/.env"
 
@@ -333,6 +364,7 @@ pipeline {
                             echo "CURRENT_COLOR=\$CURRENT_COLOR"
                             echo "NEW_COLOR=\$NEW_COLOR"
                             echo "HOST_BACKEND_PORT=\$HOST_BACKEND_PORT"
+                            echo "HOST_FRONTEND_PORT=\$HOST_FRONTEND_PORT"
                             echo "TARGET_DIR=\$TARGET_DIR"
                             echo "====VARIABLES_END===="
                             '
@@ -364,12 +396,15 @@ pipeline {
                 env.CURRENT_COLOR = variables.CURRENT_COLOR
                 env.NEW_COLOR = variables.NEW_COLOR
                 env.HOST_BACKEND_PORT = variables.HOST_BACKEND_PORT
+                env.HOST_FRONTEND_PORT = variables.HOST_FRONTEND_PORT
                 env.WORKSPACE_DIR = variables.WORKSPACE_DIR
                 env.TARGET_DIR = variables.TARGET_DIR
 
                 echo "Captured Variables : ${variables}"
                 echo "HOST_BACKEND_PORT=${env.HOST_BACKEND_PORT}"
+                echo "HOST_FRONTEND_PORT=${env.HOST_FRONTEND_PORT}"
                 echo "Backend URL: http://127.0.0.1:${env.HOST_BACKEND_PORT}"
+                echo "Frontend URL: http://127.0.0.1:${env.HOST_FRONTEND_PORT}"
             }
         }
     }
@@ -387,8 +422,14 @@ pipeline {
 
                         cd "\$TARGET_DIR"
 
-                        echo "Running containers:"
-                        docker ps
+                        echo "Deployment Files:"
+                        ls -la
+
+                        echo "Docker Compose Configuration:"
+
+                        docker compose --env-file .env -f compose.yml config
+
+                        echo "Starting Backend and Frontend..."
 
                         docker compose \
                             -p "\$PROJECT_NAME" \
@@ -397,8 +438,13 @@ pipeline {
                             up -d
 
                         echo "✅ Deployment completed."
-
-                        docker ps
+                        
+                        echo "Compose Status:"
+                        docker compose \
+                            -p "\$PROJECT_NAME" \
+                            --env-file .env \
+                            -f compose.yml \
+                            ps
                         '
                     """
                 }
@@ -425,11 +471,15 @@ pipeline {
                         while [ \$CHECKS -lt \$MAX_CHECKS ]; do
 
                             echo "🔍 Checking backend health at:"
-                            echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}/${HEALTH_BACKEND_PATH}" 
-                            BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
-                                http://127.0.0.1:${env.HOST_BACKEND_PORT}/${HEALTH_BACKEND_PATH})
+                            echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}${HEALTH_BACKEND_PATH}"
+
+                            BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                                http://127.0.0.1:${env.HOST_BACKEND_PORT}${HEALTH_BACKEND_PATH})
 
                             echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
+
+                            FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                                http://127.0.0.1:${env.HOST_FRONTEND_PORT})
 
                             if [ "\$BACKEND_STATUS" -eq 200 ]; then
                                 echo "✅ Backend health check passed."
@@ -452,9 +502,16 @@ pipeline {
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${STAGING_BACKEND_PORT}\\|${STAGING_BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
                             /etc/nginx/conf.d/${NGINX_STAGING_CONF}
+                            sudo sed -i \
+                            "s/\\(server 127.0.0.1:\\)\\(${STAGING_FRONTEND_PORT}\\|${STAGING_FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
+                            /etc/nginx/conf.d/${NGINX_STAGING_CONF}
                         else
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${BACKEND_PORT}\\|${BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
+                            /etc/nginx/conf.d/${NGINX_PRODUCTION_CONF}
+
+                            sudo sed -i \
+                            "s/\\(server 127.0.0.1:\\)\\(${FRONTEND_PORT}\\|${FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
                             /etc/nginx/conf.d/${NGINX_PRODUCTION_CONF}
                         fi
 
@@ -504,7 +561,14 @@ pipeline {
                                 -f compose.yml \
                                 down || echo "⚠️ Failed to stop old containers."
 
+                            echo "🧹 Removing unused Docker images..."
                             docker image prune -f
+
+                            echo "🧹 Removing unused Docker networks..."
+                            docker network prune -f
+
+                            echo "🧹 Removing unused Docker volumes..."
+                            docker volume prune -f
 
                             echo "✅ Old backend deployment cleaned up successfully."
 

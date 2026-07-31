@@ -473,13 +473,15 @@ pipeline {
                             echo "🔍 Checking backend health at:"
                             echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}${env.HEALTH_BACKEND_PATH}"
 
-                            BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
-                                http://127.0.0.1:${env.HOST_BACKEND_PORT}${env.HEALTH_BACKEND_PATH})
+                            BACKEND_STATUS=\$(curl --max-time 5 \
+                            -s -o /dev/null -w "%{http_code}" \
+                            http://127.0.0.1:${env.HOST_BACKEND_PORT}${env.HEALTH_BACKEND_PATH})
 
                             echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
 
-                            FRONTEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
-                                http://127.0.0.1:${env.HOST_FRONTEND_PORT})
+                            FRONTEND_STATUS=\$(curl --max-time 5 \
+                            -s -o /dev/null -w "%{http_code}" \
+                            http://127.0.0.1:${env.HOST_FRONTEND_PORT})
 
                             if [ "\$BACKEND_STATUS" -eq 200 ] && [ "\$FRONTEND_STATUS" -eq 200 ]; then
                                 echo "✅ Backend and Frontend health checks passed."
@@ -501,19 +503,24 @@ pipeline {
                         echo "Switching Nginx to backend port ${env.HOST_BACKEND_PORT}"
 
                         if [ "\$ENV" = "staging" ]; then
-                            sudo sed -i \
-                            "s/\\(server 127.0.0.1:\\)\\(${STAGING_BACKEND_PORT}\\|${STAGING_BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
+                            sudo sed -Ei \
+                            "/upstream networkers_backend/,/}/ \
+                            s#(server 127\\.0\\.0\\.1:)[0-9]+#\\1${env.HOST_BACKEND_PORT}#" \
                             /etc/nginx/conf.d/${env.NGINX_STAGING_CONF}
-                            sudo sed -i \
-                            "s/\\(server 127.0.0.1:\\)\\(${STAGING_FRONTEND_PORT}\\|${STAGING_FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
+
+                            sudo sed -Ei \
+                            "/upstream networkers_frontend/,/}/ \
+                            s#(server 127\\.0\\.0\\.1:)[0-9]+#\\1${env.HOST_FRONTEND_PORT}#" \
                             /etc/nginx/conf.d/${env.NGINX_STAGING_CONF}
                         else
-                            sudo sed -i \
-                            "s/\\(server 127.0.0.1:\\)\\(${BACKEND_PORT}\\|${BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
+                            sudo sed -Ei \
+                            "/upstream networkers_backend/,/}/ \
+                            s#(server 127\\.0\\.0\\.1:)[0-9]+#\\1${env.HOST_BACKEND_PORT}#" \
                             /etc/nginx/conf.d/${env.NGINX_PRODUCTION_CONF}
 
-                            sudo sed -i \
-                            "s/\\(server 127.0.0.1:\\)\\(${FRONTEND_PORT}\\|${FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
+                            sudo sed -Ei \
+                            "/upstream networkers_frontend/,/}/ \
+                            s#(server 127\\.0\\.0\\.1:)[0-9]+#\\1${env.HOST_FRONTEND_PORT}#" \
                             /etc/nginx/conf.d/${env.NGINX_PRODUCTION_CONF}
                         fi
 
@@ -521,7 +528,6 @@ pipeline {
                         sudo nginx -t
 
                         echo "🔄 Reloading Nginx..."
-                        sudo nginx -t
                         sudo systemctl reload nginx
 
                         echo "✅ Nginx successfully switched to the new backend deployment."

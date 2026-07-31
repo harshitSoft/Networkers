@@ -55,7 +55,7 @@ pipeline {
             steps {
                 script {
                     // Use tag(s) pointing at HEAD to avoid picking an unrelated latest tag
-                    env.TAG_NAME = sh(script: 'git tag --points-at HEAD || echo ""', returnStdout: true).trim()
+                    env.TAG_NAME = sh(script: 'git tag --points-at HEAD | sort -V | tail -n 1 || echo ""', returnStdout: true).trim()
 
                     if (!env.TAG_NAME) {
                         error '❌ No tag detected! Deployment only triggers on tag creation.'

@@ -471,18 +471,18 @@ pipeline {
                         while [ \$CHECKS -lt \$MAX_CHECKS ]; do
 
                             echo "🔍 Checking backend health at:"
-                            echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}${HEALTH_BACKEND_PATH}"
+                            echo "http://127.0.0.1:${env.HOST_BACKEND_PORT}${env.HEALTH_BACKEND_PATH}"
 
-                            BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-                                http://127.0.0.1:${env.HOST_BACKEND_PORT}${HEALTH_BACKEND_PATH})
+                            BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
+                                http://127.0.0.1:${env.HOST_BACKEND_PORT}${env.HEALTH_BACKEND_PATH})
 
                             echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
 
-                            FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                            FRONTEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" \
                                 http://127.0.0.1:${env.HOST_FRONTEND_PORT})
 
-                            if [ "\$BACKEND_STATUS" -eq 200 ]; then
-                                echo "✅ Backend health check passed."
+                            if [ "\$BACKEND_STATUS" -eq 200 ] && [ "\$FRONTEND_STATUS" -eq 200 ]; then
+                                echo "✅ Backend and Frontend health checks passed."
                                 break
                             fi
 
@@ -492,7 +492,9 @@ pipeline {
                         set -e
 
                         if [ \$CHECKS -eq \$MAX_CHECKS ]; then
-                            echo "❌ Backend health check failed after \$MAX_CHECKS attempts."
+                            echo "❌ Health check failed after \$MAX_CHECKS attempts."
+                            echo "Backend Status : \$BACKEND_STATUS"
+                            echo "Frontend Status: \$FRONTEND_STATUS"
                             exit 1
                         fi
 
@@ -501,18 +503,18 @@ pipeline {
                         if [ "\$ENV" = "staging" ]; then
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${STAGING_BACKEND_PORT}\\|${STAGING_BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
-                            /etc/nginx/conf.d/${NGINX_STAGING_CONF}
+                            /etc/nginx/conf.d/${env.NGINX_STAGING_CONF}
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${STAGING_FRONTEND_PORT}\\|${STAGING_FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
-                            /etc/nginx/conf.d/${NGINX_STAGING_CONF}
+                            /etc/nginx/conf.d/${env.NGINX_STAGING_CONF}
                         else
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${BACKEND_PORT}\\|${BACKEND_SECONDARY_PORT}\\)/\\1${env.HOST_BACKEND_PORT}/" \
-                            /etc/nginx/conf.d/${NGINX_PRODUCTION_CONF}
+                            /etc/nginx/conf.d/${env.NGINX_PRODUCTION_CONF}
 
                             sudo sed -i \
                             "s/\\(server 127.0.0.1:\\)\\(${FRONTEND_PORT}\\|${FRONTEND_SECONDARY_PORT}\\)/\\1${env.HOST_FRONTEND_PORT}/" \
-                            /etc/nginx/conf.d/${NGINX_PRODUCTION_CONF}
+                            /etc/nginx/conf.d/${env.NGINX_PRODUCTION_CONF}
                         fi
 
                         echo "🔍 Validating Nginx configuration..."

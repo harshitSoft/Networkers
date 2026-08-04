@@ -14,7 +14,7 @@ public class JoinRequest {
     private String businessName;
     private String businessCategory;
     private String location;
-    // Kept nullable at the schema level for legacy requests; all new requests require a chapter.
+    // The admin assigns a chapter after reviewing the request.
     @ManyToOne private Chapter chapter;
     @Column(length = 1500) private String message;
     @Enumerated(EnumType.STRING) private JoinRequestStatus status = JoinRequestStatus.PENDING;

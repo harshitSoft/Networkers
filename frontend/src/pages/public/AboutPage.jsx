@@ -5,24 +5,24 @@ import GlowCard from "../../components/ui/GlowCard.jsx";
 import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
 const milestones = [
   [
-    "2022",
-    "A trusted room",
-    "A small circle of founders begins exchanging meaningful introductions.",
-  ],
-  [
-    "2023",
-    "Chapters take shape",
-    "Local trust expands into a structured, accountable community.",
+    "2025",
+    "The foundation",
+    "Networkers begins with a focused group committed to meaningful introductions and shared growth.",
   ],
   [
     "2025",
-    "The network compounds",
-    "Cross-chapter referrals turn relationships into measurable value.",
+    "The first connections",
+    "Founding members turn a shared vision into an active, accountable professional community.",
   ],
   [
     "2026",
-    "10,000 strong",
-    "A new standard for professional networking emerges.",
+    "Growing together",
+    "Trusted referrals and stronger member relationships expand the community's collective impact.",
+  ],
+  [
+    "2026",
+    "60 strong",
+    "Sixty professionals are building a stronger standard for purposeful business networking.",
   ],
 ];
 export default function AboutPage() {
@@ -31,8 +31,7 @@ export default function AboutPage() {
       <PublicNavbar />
       <main>
         <section className="content-shell public-page-top text-center">
-          <p className="eyebrow">Home &gt; About</p>
-          <h1 className="mt-5 text-5xl font-bold sm:text-7xl">
+          <h1 className="text-5xl font-bold sm:text-7xl">
             Relationships are the{" "}
             <span className="text-gradient">real infrastructure.</span>
           </h1>
@@ -40,6 +39,35 @@ export default function AboutPage() {
             We are building the trusted layer where ambitious professionals
             meet, exchange value, and grow together.
           </p>
+        </section>
+        <section className="section-pad">
+          <div className="content-shell grid items-center gap-12 lg:grid-cols-2">
+            <ScrollReveal direction="left">
+              <div className="image-frame aspect-[4/3] rounded-3xl">
+                <img
+                  className="h-full w-full object-cover"
+                  src="/gallery/mainheronetworkers.webp"
+                  alt="Networkers founders and founding members together"
+                />
+              </div>
+            </ScrollReveal>
+            <ScrollReveal direction="right">
+              <p className="eyebrow">Founders &amp; founding members</p>
+              <h2 className="mt-4 text-4xl font-bold sm:text-5xl">
+                Built by people who believe trust comes first.
+              </h2>
+              <p className="mt-6 leading-8 text-[#b3b3b3]">
+                Networkers was shaped by its founders and founding members—a
+                committed group of professionals who wanted business networking
+                to feel more personal, accountable, and valuable for everyone.
+              </p>
+              <p className="mt-4 leading-8 text-[#b3b3b3]">
+                Their shared experience created the principles that still guide
+                every chapter: genuine relationships, generous introductions,
+                and growth achieved together.
+              </p>
+            </ScrollReveal>
+          </div>
         </section>
         <section className="section-solid section-pad">
           <div className="content-shell grid items-center gap-12 lg:grid-cols-2">
@@ -79,7 +107,7 @@ export default function AboutPage() {
             {milestones.map(([year, title, copy], i) => (
               <ScrollReveal
                 direction={i % 2 ? "right" : "left"}
-                key={year}
+                key={`${year}-${title}`}
                 className={`relative mb-8 pl-12 md:w-1/2 ${i % 2 ? "md:ml-auto md:pl-12" : "md:pr-12 md:text-right"}`}
               >
                 <span

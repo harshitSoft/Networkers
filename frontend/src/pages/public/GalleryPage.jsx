@@ -167,10 +167,10 @@ export default function GalleryPage() {
         <section className="section-solid px-4 py-12">
           <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["35+", "Active Members"],
-              ["2+", "Local Chapters"],
+              ["60+", "Active Members"],
+              ["3+", "Local Chapters"],
               ["1+", "Cities"],
-              ["200Cr+", "Business Done"],
+              ["2cr+", "Business Done"],
             ].map(([value, label]) => (
               <GlowCard key={label} hover={false}>
                 <p className="font-data text-4xl font-black text-[#FF1E1E]">

@@ -9,6 +9,7 @@ import PublicEvents from "../pages/public/PublicEvents.jsx";
 import GalleryPage from "../pages/public/GalleryPage.jsx";
 import Login from "../pages/auth/Login.jsx";
 import JoinRequestPage from "../pages/public/JoinRequestPage.jsx";
+import PrivacyPolicyPage from "../pages/public/PrivacyPolicyPage.jsx";
 import Profile from "../pages/auth/Profile.jsx";
 import Dashboard from "../pages/dashboard/Dashboard.jsx";
 import PublicDashboard from "../pages/dashboard/PublicDashboard.jsx";
@@ -51,6 +52,7 @@ export default function AppRoutes() {
       <Route path="/gallery" element={<GalleryPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/join" element={<JoinRequestPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />

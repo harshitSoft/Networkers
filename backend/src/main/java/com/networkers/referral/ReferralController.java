@@ -222,7 +222,7 @@ public class ReferralController {
         post.setUser(referral.getReceivedBy());
         post.setType(PostType.SUCCESS_STORY);
         post.setTitle("Referral successfully completed");
-        post.setContent("Thank you so much, %s, for your referral! 🎉\n\nI'm happy to share that the referral has been successfully completed, and I was able to secure the business through it. I truly appreciate your support and trust. Looking forward to more collaborations in the future!\n\nThanks again, %s! 🙌".formatted(giver.getFullName(), giver.getFullName()));
+        post.setContent("Thank you, %s, for the valuable referral and your continued trust. I truly appreciate your support and look forward to many more collaborations! 🙌".formatted(giver.getFullName()));
         post.getMentions().add(giver);
         posts.save(post);
     }

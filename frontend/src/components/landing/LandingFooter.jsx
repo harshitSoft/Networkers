@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const columns = [
   ["Explore", [["Chapters", "/chapters"], ["Events", "/events"], ["Gallery", "/gallery"]]],
-  ["Company", [["About us", "/about"], ["Home", "/"]]],
+  ["Company", [["About us", "/about"], ["Privacy policy", "/privacy-policy"], ["Home", "/"]]],
   ["Account", [["Join a chapter", "/join"], ["Member login", "/login"]]],
 ];
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Users } from "lucide-react";
+import { MessageCircle, Send, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { chapterApi } from "../../api/chapterApi";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -18,6 +18,13 @@ export default function UserChapters() {
     const data = await chapterApi.userMembers(chapter.id);
     setMembers(Array.isArray(data) ? data : []);
     requestAnimationFrame(() => membersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+  function openWhatsApp(member) {
+    const digits = String(member.mobile || "").replace(/\D/g, "");
+    if (!digits) return;
+    const phone = digits.length === 10 ? `91${digits}` : digits.replace(/^00/, "");
+    const message = `Hi ${member.fullName}, I found your profile through the Networkers community and would like to connect with you.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
   return (
     <div className="space-y-6">
@@ -52,7 +59,7 @@ export default function UserChapters() {
                 <p className="mt-1 text-sm text-red-700">{member.businessCategory}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{member.services}</p>
                 <p className="mt-2 text-sm text-slate-500">{member.location} {member.mobile ? `| ${member.mobile}` : ""}</p>
-                <button className="btn-primary mt-4" onClick={() => navigate(`/give-referral?memberId=${member.id}`)}><Send size={16} /> Give Referral</button>
+                <div className="mt-4 flex flex-wrap gap-2"><button className="btn-primary" onClick={() => navigate(`/give-referral?memberId=${member.id}`)}><Send size={16} /> Give Referral</button>{member.mobile&&<button className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1fbd5a]" onClick={() => openWhatsApp(member)} aria-label={`Chat with ${member.fullName} on WhatsApp`}><MessageCircle size={17}/> WhatsApp</button>}</div>
               </GlowCard>
             ))}
             {members.length === 0 && <p className="text-sm text-slate-500">No members assigned to this chapter yet.</p>}

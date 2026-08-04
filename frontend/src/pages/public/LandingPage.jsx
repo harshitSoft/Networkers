@@ -13,7 +13,6 @@ import GlowCard from "../../components/ui/GlowCard.jsx";
 import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
 import { chapterApi } from "../../api/chapterApi.js";
 import { eventApi } from "../../api/eventApi.js";
-import { realGalleryItems } from "../../data/galleryItems.js";
 
 const heroSlides = [
   {
@@ -167,7 +166,7 @@ export default function LandingPage() {
             </div>
           ) : (
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {events.slice(0, 6).map((event, i) => (
+              {events.slice(0, 3).map((event, i) => (
                 <ScrollReveal delay={i * 60} key={event.id}>
                   <GlowCard>
                     <div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0">
@@ -209,36 +208,6 @@ export default function LandingPage() {
             <Link to="/events" className="glow-button glow-button-secondary">
               View all events <ArrowRight size={17} />
             </Link>
-          </div>
-        </section>
-        <section className="section-solid section-pad">
-          <div className="content-shell">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {realGalleryItems.slice(0, 6).map((item, index) => (
-                <ScrollReveal delay={index * 55} key={item.id}>
-                  <Link
-                    to="/gallery"
-                    className="image-frame group block aspect-[4/3] overflow-hidden rounded-3xl bg-brand-panel"
-                    aria-label={`View gallery: ${item.title}`}
-                  >
-                    <img
-                      loading="lazy"
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 to-transparent p-5 pt-14 text-white">
-                      <span className="text-xs font-black uppercase tracking-wider text-red-300">{item.category}</span>
-                    </span>
-                  </Link>
-                </ScrollReveal>
-              ))}
-            </div>
-            <div className="mt-8 text-center">
-              <Link to="/gallery" className="glow-button glow-button-secondary">
-                View full gallery <ArrowRight size={17} />
-              </Link>
-            </div>
           </div>
         </section>
       </main>

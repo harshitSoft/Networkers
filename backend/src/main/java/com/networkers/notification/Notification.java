@@ -25,3 +25,4 @@ public class Notification {
     public void setRead(boolean read) { this.read = read; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
+//comment line 

@@ -25,7 +25,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    @Value("${app.cors.allowed-origins:http://localhost:5173,https://networkers-new.netlify.app}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,https://networkers.family,https://www.networkers.family}")
     private List<String> allowedOrigins;
 
     @Bean

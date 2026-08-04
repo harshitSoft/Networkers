@@ -3,7 +3,8 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "ap-south-1"
-    NETWORKERS_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-backend-app"
+    BACKEND_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-backend-app"
+    FRONTEND_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-frontend-app"
 
 phases:
   pre_build:
@@ -14,15 +15,19 @@ phases:
       - docker info
 
       - echo "🔹 Logging into AWS ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $NETWORKERS_ECR_REPO
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 615299768302.dkr.ecr.ap-south-1.amazonaws.com
 
   build:
     commands:
       - set -e
 
-      - echo "🔹 Building Networkers Docker image..."
+      - echo "🔹 Building Backend Docker Image..."
 
       - docker build --build-arg APP_VERSION="$TAG_NAME" --build-arg DEV_ENV="$ENVIRONMENT" -t "$BACKEND_TAG" ./backend
+
+      - echo "Building Frontend Docker Image"
+
+      - docker build --build-arg APP_VERSION="$TAG_NAME" --build-arg DEV_ENV="$ENVIRONMENT" -t "$FRONTEND_TAG" ./frontend
 
       - echo "🔹 Built Docker Images:"
       
@@ -35,13 +40,26 @@ phases:
       - echo "🔹 Tagging Docker image..."
       - pwd
       - ls -la
-      - echo "BACKEND_TAG=$BACKEND_TAG"
-      - echo "NETWORKERS_ECR_REPO=$NETWORKERS_ECR_REPO"
+
+      - docker tag "$BACKEND_TAG" "$BACKEND_ECR_REPO:$BACKEND_TAG"
+      - docker tag "$FRONTEND_TAG" "$FRONTEND_ECR_REPO:$FRONTEND_TAG"
+
+      - echo "🔹 Verifying images..."
+
+      - echo "Backend image:"
+      - docker image inspect "$BACKEND_TAG"
+
+      - echo "Frontend image:"
+      - docker image inspect "$FRONTEND_TAG"
+
+      - echo "Pushing Backend Image"
+
+      - docker push "$BACKEND_ECR_REPO:$BACKEND_TAG"
+
+      - echo "Pushing Frontend Image"
+
+      - docker push "$FRONTEND_ECR_REPO:$FRONTEND_TAG"
 
       - docker images
 
-      - docker tag "$BACKEND_TAG" "$NETWORKERS_ECR_REPO:$BACKEND_TAG"
-
-      - echo "🔹 Pushing Docker image to AWS ECR..."
-
-      - docker push "$NETWORKERS_ECR_REPO:$BACKEND_TAG"
+      

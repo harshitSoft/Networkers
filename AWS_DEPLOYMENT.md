@@ -57,7 +57,7 @@ CLOUDINARY_CLOUD_NAME
 CLOUDINARY_API_KEY
 CLOUDINARY_API_SECRET
 CLOUDINARY_FOLDER_ROOT
-CORS_ALLOWED_ORIGINS
+APP_CORS_ALLOWED_ORIGINS
 ```
 
 Use App Runner environment variables for non-secret configuration. Put passwords,
@@ -65,7 +65,7 @@ the JWT secret, the admin password, and Cloudinary credentials in AWS Secrets Ma
 them as App Runner runtime secrets. The App Runner instance role needs permission
 to read those secrets.
 
-Set `CORS_ALLOWED_ORIGINS` to a comma-separated list containing the final frontend
+Set `APP_CORS_ALLOWED_ORIGINS` to a comma-separated list containing the final frontend
 origin, for example:
 
 ```text

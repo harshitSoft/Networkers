@@ -1,63 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Handshake, TrendingUp, Users } from "lucide-react";
-import { adminApi } from "../../api/adminApi";
+import {useEffect,useMemo,useState} from "react";
+import {BarChart3,Building2,Handshake,IndianRupee,TrendingUp,Users} from "lucide-react";
+import {adminApi} from "../../api/adminApi";
 import StatCard from "../../components/StatCard.jsx";
 
-export default function ReferralAnalytics() {
-  const [items, setItems] = useState([]);
-  useEffect(() => { adminApi.referrals().then((data) => setItems(Array.isArray(data) ? data : [])).catch(() => setItems([])); }, []);
-  const stats = useMemo(() => {
-    const confirmed = items.filter((r) => ["CONFIRMED", "COMPLETED"].includes(r.status));
-    const total = confirmed.reduce((sum, r) => sum + Number(r.confirmedAmount || r.businessValue || 0), 0);
-    const month = new Date().toISOString().slice(0, 7);
-    const currentMonth = confirmed.filter((r) => String(r.updatedAt || r.createdAt || "").startsWith(month)).reduce((sum, r) => sum + Number(r.confirmedAmount || r.businessValue || 0), 0);
-    return { confirmed, total, currentMonth, topGivers: rank(confirmed, "givenBy"), topEarners: rank(confirmed, "receivedBy"), chapterRevenue: chapterRank(confirmed) };
-  }, [items]);
-  return (
-    <div className="page-shell">
-      <div className="rounded-2xl bg-white p-6 shadow-premium"><p className="page-kicker">Revenue intelligence</p><h2 className="mt-2 page-title">Revenue <span className="text-[#E8262A]">Analytics</span></h2><p className="mt-1 text-sm text-slate-500">Business revenue analytics from confirmed and completed referrals.</p></div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Business Revenue Given" value={`Rs ${stats.total.toLocaleString("en-IN")}`} icon={TrendingUp} />
-        <StatCard label="Total Business Revenue Earned" value={`Rs ${stats.total.toLocaleString("en-IN")}`} icon={BarChart3} />
-        <StatCard label="Current Month Revenue" value={`Rs ${stats.currentMonth.toLocaleString("en-IN")}`} icon={BarChart3} />
-        <StatCard label="Total Confirmed Referrals" value={stats.confirmed.length} icon={Handshake} />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <RankTable title="Top Givers" rows={stats.topGivers} />
-        <RankTable title="Top Earners" rows={stats.topEarners} />
-        <RankTable title="Chapter-wise Revenue" rows={stats.chapterRevenue} />
-      </div>
-    </div>
-  );
-}
+const money=value=>`Rs ${Number(value||0).toLocaleString("en-IN")}`;
+const successful=r=>["CONFIRMED","COMPLETED","CONVERTED"].includes(r.status);
 
-function rank(referrals, key) {
-  const map = new Map();
-  referrals.forEach((r) => {
-    const user = r[key];
-    const name = user?.businessName || user?.fullName || "Unknown";
-    map.set(name, (map.get(name) || 0) + Number(r.confirmedAmount || r.businessValue || 0));
-  });
-  return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+export default function ReferralAnalytics(){
+ const[items,setItems]=useState([]),[overview,setOverview]=useState({});
+ useEffect(()=>{Promise.all([adminApi.referrals(),adminApi.analytics()]).then(([rows,stats])=>{setItems(Array.isArray(rows)?rows:[]);setOverview(stats||{})}).catch(()=>{setItems([]);setOverview({})})},[]);
+ const stats=useMemo(()=>{const confirmed=items.filter(successful),total=confirmed.reduce((sum,r)=>sum+Number(r.confirmedAmount||r.businessValue||0),0),now=new Date(),monthKey=now.toISOString().slice(0,7),currentMonth=confirmed.filter(r=>String(r.updatedAt||r.createdAt||"").startsWith(monthKey)).reduce((sum,r)=>sum+Number(r.confirmedAmount||r.businessValue||0),0),average=confirmed.length?total/confirmed.length:0;return{confirmed,total,currentMonth,average,topEarners:rank(confirmed,"receivedBy"),chapterRevenue:chapterRank(confirmed),monthly:monthlyRevenue(confirmed),statuses:statusBreakdown(items)}},[items]);
+ return <div className="page-shell">
+  <div className="rounded-3xl border border-red-500/20 bg-gradient-to-r from-[#8B0000]/80 to-[#111] p-6 shadow-premium"><p className="page-kicker">Revenue intelligence</p><h2 className="mt-2 page-title">Networkers <span className="text-red-400">Analytics</span></h2><p className="mt-1 text-sm text-slate-300">A complete view of revenue successfully completed through the Networkers platform.</p></div>
+  <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="Total Network Revenue" value={money(stats.total)} icon={IndianRupee}/><StatCard label="Revenue This Month" value={money(stats.currentMonth)} icon={TrendingUp}/><StatCard label="Confirmed Referrals" value={stats.confirmed.length} icon={Handshake}/><StatCard label="Average Deal Value" value={money(stats.average)} icon={BarChart3}/><StatCard label="Total Members" value={overview.totalUsers||0} icon={Users}/><StatCard label="Total Chapters" value={overview.totalChapters||0} icon={Building2}/><StatCard label="All Referrals" value={items.length} icon={Handshake}/><StatCard label="Confirmation Rate" value={`${items.length?Math.round(stats.confirmed.length/items.length*100):0}%`} icon={TrendingUp}/></section>
+  <section className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]"><RevenueChart rows={stats.monthly}/><StatusView rows={stats.statuses} total={items.length}/></section>
+  <section className="grid gap-5 lg:grid-cols-2"><RankTable title="Top Revenue Earners" rows={stats.topEarners}/><RankTable title="Chapter-wise Revenue" rows={stats.chapterRevenue}/></section>
+ </div>
 }
-
-function chapterRank(referrals) {
-  const map = new Map();
-  referrals.forEach((r) => {
-    const name = r.receivedBy?.chapter?.chapterName || r.givenBy?.chapter?.chapterName || "Unassigned";
-    map.set(name, (map.get(name) || 0) + Number(r.confirmedAmount || r.businessValue || 0));
-  });
-  return [...map.entries()].sort((a, b) => b[1] - a[1]);
-}
-
-function RankTable({ title, rows }) {
-  return (
-    <div className="card p-5">
-      <div className="flex items-center gap-2"><Users className="text-red-700" size={18} /><h3 className="font-black">{title}</h3></div>
-      <div className="mt-4 space-y-3">
-        {rows.map(([name, amount]) => <div className="flex justify-between gap-3 rounded-2xl bg-red-50 px-3 py-2 text-sm" key={name}><span className="font-bold">{name}</span><span className="font-black text-red-700">Rs {Number(amount).toLocaleString("en-IN")}</span></div>)}
-        {rows.length === 0 && <p className="text-sm text-slate-500">No confirmed revenue yet.</p>}
-      </div>
-    </div>
-  );
-}
+function monthlyRevenue(referrals){const map=new Map();referrals.forEach(r=>{const date=String(r.updatedAt||r.createdAt||"").slice(0,7);if(date)map.set(date,(map.get(date)||0)+Number(r.confirmedAmount||r.businessValue||0))});return[...map.entries()].sort(([a],[b])=>a.localeCompare(b)).slice(-8)}
+function statusBreakdown(items){const map=new Map();items.forEach(r=>map.set(r.status||"UNKNOWN",(map.get(r.status||"UNKNOWN")||0)+1));return[...map.entries()].sort((a,b)=>b[1]-a[1])}
+function rank(referrals,key){const map=new Map();referrals.forEach(r=>{const user=r[key],name=user?.businessName||user?.fullName||"Unknown";map.set(name,(map.get(name)||0)+Number(r.confirmedAmount||r.businessValue||0))});return[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6)}
+function chapterRank(referrals){const map=new Map();referrals.forEach(r=>{const name=r.receivedBy?.chapter?.chapterName||r.givenBy?.chapter?.chapterName||"Unassigned";map.set(name,(map.get(name)||0)+Number(r.confirmedAmount||r.businessValue||0))});return[...map.entries()].sort((a,b)=>b[1]-a[1])}
+function RevenueChart({rows}){const max=Math.max(...rows.map(([,v])=>v),1);return <section className="glass-card rounded-3xl p-6"><h3 className="text-xl font-black">Revenue Growth</h3><p className="mt-1 text-xs text-brand-muted">Completed Networkers revenue by month</p><div className="mt-8 flex h-64 items-end gap-3">{rows.map(([month,value])=><div className="flex h-full min-w-0 flex-1 flex-col justify-end text-center" key={month}><span className="mb-2 hidden text-[10px] font-bold sm:block">{money(value)}</span><div className="mx-auto w-full max-w-14 rounded-t-xl bg-gradient-to-t from-red-900 to-red-500 transition-all duration-700" style={{height:`${Math.max(6,value/max*100)}%`}}/><span className="mt-2 text-[9px] text-brand-muted">{month}</span></div>)}{rows.length===0&&<p className="m-auto text-sm text-brand-muted">Revenue growth will appear after a referral is confirmed.</p>}</div></section>}
+function StatusView({rows,total}){return <section className="glass-card rounded-3xl p-6"><h3 className="text-xl font-black">Referral Pipeline</h3><p className="mt-1 text-xs text-brand-muted">All referral statuses</p><div className="mt-6 space-y-4">{rows.map(([status,count])=><div key={status}><div className="mb-1 flex justify-between text-xs"><span>{status.replaceAll("_"," ")}</span><strong>{count}</strong></div><div className="h-2 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-gradient-to-r from-red-900 to-red-500" style={{width:`${total?count/total*100:0}%`}}/></div></div>)}</div></section>}
+function RankTable({title,rows}){return <section className="card p-5"><div className="flex items-center gap-2"><Users className="text-red-500" size={18}/><h3 className="font-black">{title}</h3></div><div className="mt-4 space-y-3">{rows.map(([name,amount],i)=><div className="flex items-center justify-between gap-3 rounded-2xl border border-red-500/10 bg-red-500/5 px-3 py-3 text-sm" key={name}><span className="font-bold"><i className="mr-2 text-red-400">#{i+1}</i>{name}</span><strong className="text-red-500">{money(amount)}</strong></div>)}{rows.length===0&&<p className="text-sm text-brand-muted">No confirmed revenue yet.</p>}</div></section>}

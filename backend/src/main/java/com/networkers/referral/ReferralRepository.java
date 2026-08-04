@@ -14,6 +14,10 @@ public interface ReferralRepository extends JpaRepository<Referral, Long> {
     long countByStatus(ReferralStatus status);
     long countByGivenBy(User user);
     long countByReceivedBy(User user);
+    @Query("select count(r) from Referral r where r.givenBy = :user and month(r.createdAt) = :month and year(r.createdAt) = :year")
+    long countGivenByForMonth(User user, int month, int year);
+    @Query("select coalesce(sum(coalesce(r.confirmedAmount,r.businessValue,0)),0) from Referral r where r.givenBy=:user and month(r.updatedAt)=:month and year(r.updatedAt)=:year and r.status in (com.networkers.referral.ReferralStatus.CONFIRMED,com.networkers.referral.ReferralStatus.COMPLETED,com.networkers.referral.ReferralStatus.CONVERTED)")
+    BigDecimal totalBusinessGivenByForMonth(User user, int month, int year);
     @Query("select coalesce(sum(r.confirmedAmount), 0) from Referral r where r.status in ('CONFIRMED', 'COMPLETED')")
     BigDecimal totalBusinessGenerated();
     @Query("select coalesce(sum(r.confirmedAmount), 0) from Referral r where r.status in ('CONFIRMED', 'COMPLETED') and r.givenBy = :user")

@@ -91,6 +91,7 @@ public class AdminController {
     private Map<String, Object> analytics() {
         return Map.of(
                 "totalUsers", users.countByRoleAndDeletedFalse(Role.USER),
+                "totalChapters", chapters.count(),
                 "totalBusinesses", businesses.count(),
                 "totalConnections", connections.count(),
                 "totalReferrals", referrals.count(),

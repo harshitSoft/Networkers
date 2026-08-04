@@ -71,10 +71,10 @@ public class MeetingAutomationService {
 
     @Scheduled(cron="0 0 9 * * *",zone="Asia/Kolkata") @Transactional
     public void reminders(){
-        LocalDate tomorrow=LocalDate.now(ZoneId.of("Asia/Kolkata")).plusDays(1);
-        for(MonthlyMeeting m:meetings.findByScheduledDateAndReminderSentFalse(tomorrow)){
+        LocalDate reminderDate=LocalDate.now(ZoneId.of("Asia/Kolkata")).plusDays(2);
+        for(MonthlyMeeting m:meetings.findByScheduledDateAndReminderSentFalse(reminderDate)){
             for(MeetingParticipant p:participants.findByGroupIdOrderByMemberFullNameAsc(m.getGroup().getId()))
-                notifications.notify(p.getMember(),"Individual meeting window starts tomorrow","Your Group "+m.getGroup().getGroupNumber()+" one-to-one meeting window runs from "+m.getScheduledDate()+" to "+effectiveEnd(m)+".");
+                notifications.notify(p.getMember(),"Be ready for your upcoming meeting","Your Group "+m.getGroup().getGroupNumber()+" one-to-one meeting window begins in 2 days and runs from "+m.getScheduledDate()+" to "+effectiveEnd(m)+". Please connect with your partners and be prepared.");
             m.setReminderSent(true);meetings.save(m);
         }
     }

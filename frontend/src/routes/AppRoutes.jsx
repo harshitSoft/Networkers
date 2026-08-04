@@ -40,6 +40,8 @@ import ManageMeetups from "../pages/admin/ManageMeetups.jsx";
 import EditMeetup from "../pages/admin/EditMeetup.jsx";
 import ReferralAnalytics from "../pages/admin/ReferralAnalytics.jsx";
 import ManageMonthlyMeetings from "../pages/admin/ManageMonthlyMeetings.jsx";
+import ManageVisitors from "../pages/admin/ManageVisitors.jsx";
+import VisitorDetails from "../pages/admin/VisitorDetails.jsx";
 
 export default function AppRoutes() {
   return (
@@ -94,6 +96,8 @@ export default function AppRoutes() {
           <Route path="/admin/revenue-analytics" element={<ReferralAnalytics />} />
           <Route path="/admin/analytics" element={<ReferralAnalytics />} />
           <Route path="/admin/monthly-meetings" element={<ManageMonthlyMeetings />} />
+          <Route path="/admin/visitors" element={<ManageVisitors />} />
+          <Route path="/admin/visitors/details" element={<VisitorDetails />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

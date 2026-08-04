@@ -7,7 +7,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_ACCOUNT_ID = credentials('aws-rahul-account-id')
-        EC2_INSTANCE = credentials('aws-tobuu-app-user-with-ip')
+        EC2_INSTANCE = credentials('aws-hns-app-server-with-ip')
         BACKEND_ECR_REPOSITORY = 'networkers-backend-app'
         FRONTEND_ECR_REPOSITORY = 'networkers-frontend-app'
         GITHUB_PAT = credentials('hrms-git-token')
@@ -33,10 +33,10 @@ pipeline {
         STAGING_FRONTEND_SECONDARY_PORT = '4201'
 
         // Workspace and health checks
-        BASE_DIR = "/home/jenkins/networkers"
+        BASE_DIR='/home/ubuntu/networkers'
         HEALTH_BACKEND_PATH = "/api/health"
 
-        JENKINS_EC2_TOBUU_APP_SERVER = 'jenkins-ssh-key-tobuu-app-server'
+        JENKINS_EC2_HNS_APP_SERVER = 'jenkins-ssh-key-hns-server'
         
 
         // S3 bucket for your env files
@@ -204,7 +204,7 @@ pipeline {
         stage('Clone and Configure on Remote Host') {
         steps {
             script {
-                def output = sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                def output = sshagent(credentials: [env.JENKINS_EC2_HNS_APP_SERVER]) {
                     sh(
                         script: """
                             ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
@@ -410,7 +410,7 @@ pipeline {
     }
         stage('Deploy Using Blue-Green Deployment') {
             steps {
-                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                sshagent(credentials: [env.JENKINS_EC2_HNS_APP_SERVER]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
                         set -e
@@ -453,7 +453,7 @@ pipeline {
 
         stage('Switch Nginx to New Deployment') {
             steps {
-                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                sshagent(credentials: [env.JENKINS_EC2_HNS_APP_SERVER]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
                         set -e
@@ -480,7 +480,7 @@ pipeline {
                             echo "Health Check Attempt \$((CHECKS+1)): Backend=\$BACKEND_STATUS"
 
                             FRONTEND_STATUS=\$(curl --max-time 5 \
-                            -s -o /dev/null -w "%{http_code}" \
+                            -s -o /dev/null  -w "%{http_code}" \
                             http://127.0.0.1:${env.HOST_FRONTEND_PORT})
 
                             if [ "\$BACKEND_STATUS" -eq 200 ] && [ "\$FRONTEND_STATUS" -eq 200 ]; then
@@ -540,7 +540,7 @@ pipeline {
 
         stage('Cleanup Old Containers') {
             steps {
-                sshagent(credentials: [env.JENKINS_EC2_TOBUU_APP_SERVER]) {
+                sshagent(credentials: [env.JENKINS_EC2_HNS_APP_SERVER]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_INSTANCE} '
                         set -e

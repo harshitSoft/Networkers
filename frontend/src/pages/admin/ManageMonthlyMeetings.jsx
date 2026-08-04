@@ -1,83 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, Medal, RefreshCw, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { chapterApi } from "../../api/chapterApi";
 import { monthlyMeetingApi } from "../../api/meetingApi";
 import EmptyState from "../../components/EmptyState";
 
-function localMonth(offset = 0) {
-  const date = new Date();
-  date.setDate(1);
-  date.setMonth(date.getMonth() + offset);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export default function ManageMonthlyMeetings() {
   const [searchParams] = useSearchParams();
-  const [chapters, setChapters] = useState([]);
-  const [chapterId, setChapterId] = useState("");
-  const [month, setMonth] = useState(localMonth());
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const upcomingMonths = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const value = localMonth(index);
-    const [year, monthNumber] = value.split("-").map(Number);
-    return { value, label: new Date(year, monthNumber - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) };
-  }), []);
-
-  useEffect(() => {
-    chapterApi.all().then((data) => {
-      setChapters(data);
-      const requested = searchParams.get("chapterId");
-      if (requested && data.some((chapter) => String(chapter.id) === requested)) setChapterId(requested);
-      else if (data[0]) setChapterId(String(data[0].id));
-    }).catch(() => setChapters([]));
-  }, [searchParams]);
-  useEffect(() => {
-    if (chapterId) monthlyMeetingApi.adminOverview(chapterId, month).then(setItems).catch(() => setItems([]));
-  }, [chapterId, month]);
-
-  async function generate() {
-    if (items.length && !confirm("Groups already exist for this month. Regenerating replaces groups, meetings, and their comments. Continue?")) return;
-    setLoading(true);
-    try {
-      const data = await monthlyMeetingApi.regenerate(chapterId, month);
-      setItems(data);
-      toast.success(`Face-to-face groups generated for ${month}`);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Could not generate meetings");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function remove(meeting) {
-    if (!confirm(`Delete Group ${meeting.groupNumber} and all of its meetings for ${month}?`)) return;
-    try {
-      await monthlyMeetingApi.deleteGroup(meeting.id);
-      setItems((current) => current.filter((item) => item.id !== meeting.id));
-      toast.success("Meeting group permanently deleted");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Could not delete meeting group");
-    }
-  }
-
-  return <div className="space-y-5">
-    <header><p className="page-kicker">Automation oversight</p><h1 className="page-title">Face to <span className="text-brand-accent">Face</span></h1><p className="mt-2 text-sm text-brand-muted">View, generate, or permanently delete one-to-one groups for the current and upcoming months.</p></header>
-    <div className="card space-y-3 p-4">
-      <div className="flex flex-wrap gap-3">
-        <select className="field max-w-sm" value={chapterId} onChange={(event) => setChapterId(event.target.value)}><option value="">Select chapter</option>{chapters.map((chapter) => <option value={chapter.id} key={chapter.id}>{chapter.chapterName}</option>)}</select>
-        <input className="field max-w-[190px]" type="month" min={upcomingMonths[0].value} value={month} onChange={(event) => setMonth(event.target.value)} />
-        <button className="btn-primary" disabled={!chapterId || !month || loading} onClick={generate}>{loading ? "Generating..." : items.length ? "Regenerate selected month" : "Generate selected month now"}</button>
-      </div>
-      <div className="flex flex-wrap gap-2" aria-label="Upcoming months">{upcomingMonths.map((item) => <button type="button" key={item.value} className={month === item.value ? "btn-primary !min-h-9 !px-3 !py-1" : "btn-muted !min-h-9 !px-3 !py-1"} onClick={() => setMonth(item.value)}>{item.label}</button>)}</div>
-    </div>
-    <div className="grid gap-4 md:grid-cols-2">{items.map((meeting) => <article className="glass-card rounded-3xl p-5" key={meeting.id}>
-      <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="text-xl font-bold">Group {meeting.groupNumber}</h2><div className="flex flex-wrap items-center gap-2"><span className="status-pill">{meeting.status}</span><button type="button" className="btn-muted !min-h-9 !px-3 !py-1 text-red-500" onClick={() => remove(meeting)} aria-label={`Delete Group ${meeting.groupNumber}`}><Trash2 size={16} /> Delete</button></div></div>
-      <p className="mt-4 font-bold text-brand-accent">Host: {meeting.host.name}</p><p className="mt-2 text-sm text-brand-muted">{meeting.date} to {meeting.endDate} · {meeting.time}</p><p className="mt-3 text-sm">{meeting.members.length} members · {meeting.completedPairs}/{meeting.totalPairs} meetings · {meeting.completionPercentage}%</p>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-brand-panel"><div className="h-full bg-brand-accent" style={{ width: `${meeting.completionPercentage}%` }} /></div><div className="mt-3 flex flex-wrap gap-2">{meeting.members.map((member) => <span className="rounded-full bg-brand-panel px-3 py-1 text-xs" key={member.id}>{member.name}</span>)}</div>
-    </article>)}</div>
-    {items.length === 0 && <EmptyState title="No groups generated" message="Choose an upcoming month and click Generate selected month now." />}
+  const [chapters,setChapters]=useState([]);const[chapterId,setChapterId]=useState("");const[data,setData]=useState(null);const[error,setError]=useState("");const[loading,setLoading]=useState(false);
+  useEffect(()=>{chapterApi.all().then(items=>{setChapters(items);const requested=searchParams.get("chapterId");setChapterId(requested&&items.some(c=>String(c.id)===requested)?requested:items[0]?String(items[0].id):"")}).catch(()=>setChapters([]))},[searchParams]);
+  const load=()=>{if(!chapterId)return;monthlyMeetingApi.cycleOverview(chapterId).then(value=>{setData(value);setError("")}).catch(requestError=>{setData(null);setError(requestError.response?.data?.message||"No cycle has been started")})};
+  useEffect(()=>{load()},[chapterId]);
+  async function start(){setLoading(true);try{const value=await monthlyMeetingApi.startCycle(chapterId);setData(value);setError("");toast.success("Cycle 1 started from today")}catch(e){toast.error(e.response?.data?.message||"Could not start cycle")}finally{setLoading(false)}}
+  async function regenerate(){if(!confirm(`Restart Cycle ${data.cycle.cycleNumber} from today? All meeting progress, uploaded evidence, comments, and scores in this cycle will reset.`))return;setLoading(true);try{setData(await monthlyMeetingApi.regenerateCycle(data.cycle.id));toast.success("Cycle restarted from today with fresh groups")}catch(e){toast.error(e.response?.data?.message||"Could not regenerate cycle")}finally{setLoading(false)}}
+  return <div className="space-y-5"><header><p className="page-kicker">Cycle oversight</p><h1 className="page-title">Face to <span className="text-brand-accent">Face</span></h1><p className="mt-2 text-sm text-brand-muted">Every member meets every other member through repeating 10-day group rounds.</p></header>
+    <div className="card flex flex-wrap items-center gap-3 p-4"><select className="field max-w-sm" value={chapterId} onChange={e=>setChapterId(e.target.value)}><option value="">Select chapter</option>{chapters.map(chapter=><option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select>{!data&&chapterId&&<button className="btn-primary" disabled={loading} onClick={start}>{loading?"Starting…":"Start first cycle"}</button>}{data&&<button className="btn-primary" disabled={loading} onClick={regenerate}><RefreshCw size={17}/>{loading?"Restarting…":"Regenerate cycle from today"}</button>}</div>
+    {!data?<EmptyState title="No active face-to-face cycle" message={error||"Select a chapter and start its first cycle."}/>:<><section className="glass-card rounded-3xl p-5 md:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="status-pill">Cycle {data.cycle.cycleNumber}</span><h2 className="mt-3 text-2xl font-bold">{data.cycle.chapterName}</h2><p className="mt-1 text-sm text-brand-muted">Started {data.cycle.startDate}{data.cycle.completedDate&&` · Completed ${data.cycle.completedDate}`}{data.cycle.nextCycleDate&&` · Next cycle ${data.cycle.nextCycleDate}`}</p></div><span className="status-pill">{data.cycle.status}</span></div><div className="mt-6 grid gap-3 sm:grid-cols-3"><Metric icon={Users} label="Unique meetings" value={`${data.progress.completedPairs}/${data.progress.totalPairs}`}/><Metric icon={CalendarDays} label="Generated rounds" value={new Set(data.groups.map(group=>group.date)).size}/><Metric icon={Medal} label="Cycle progress" value={`${data.progress.completionPercentage}%`}/></div><div className="mt-4 h-3 overflow-hidden rounded-full bg-brand-panel"><div className="h-full rounded-full bg-brand-accent" style={{width:`${data.progress.completionPercentage}%`}}/></div></section>
+      <section className="grid gap-4 lg:grid-cols-[1fr_.7fr]"><div className="space-y-4"><h2 className="text-xl font-bold">Generated group rounds</h2>{data.groups.map(group=><article className="glass-card rounded-3xl p-5" key={group.id}><div className="flex justify-between gap-3"><div><span className="status-pill">Round {roundFor(data.groups,group)} · Group {group.groupNumber}</span><p className="mt-3 font-bold">{group.date} to {group.endDate} · {group.time}</p></div><span className="text-sm font-bold text-brand-accent">{group.completionPercentage}%</span></div><p className="mt-3 text-sm text-brand-muted">{group.members.length} members · {group.completedPairs}/{group.totalPairs} assigned meetings</p><div className="mt-3 flex flex-wrap gap-2">{group.members.map(member=><span className="rounded-full bg-brand-panel px-3 py-1 text-xs" key={member.id}>{member.name}</span>)}</div></article>)}</div><Leaderboard items={data.leaderboard}/></section></>}
   </div>;
 }
+function roundFor(groups,target){return [...new Set(groups.map(group=>group.date))].indexOf(target.date)+1}
+function Metric({icon:Icon,label,value}){return <div className="rounded-2xl bg-brand-panel p-4"><Icon className="text-brand-accent" size={19}/><p className="mt-3 text-xs uppercase tracking-wider text-brand-muted">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div>}
+function Leaderboard({items}){return <aside><h2 className="text-xl font-bold">Cycle leaderboard</h2><div className="glass-card mt-4 rounded-3xl p-4">{items.map((entry,index)=><div className="flex items-center gap-3 border-b border-brand-border/10 p-3 last:border-0" key={entry.member.id}><span className="grid h-8 w-8 place-items-center rounded-full bg-brand-panel font-bold">{index+1}</span><div className="min-w-0 flex-1"><p className="truncate font-bold">{entry.member.name}</p><p className="truncate text-xs text-brand-muted">{entry.member.businessName||"Member"}</p></div><strong className="text-brand-accent">{entry.points} pts</strong></div>)}</div></aside>}

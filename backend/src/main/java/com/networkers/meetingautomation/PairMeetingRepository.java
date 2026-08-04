@@ -6,6 +6,7 @@ import java.util.*;
 
 public interface PairMeetingRepository extends JpaRepository<PairMeeting,Long> {
     List<PairMeeting> findByMeetingIdOrderByIdAsc(Long meetingId);
+    List<PairMeeting> findByMeetingGroupCycleId(Long cycleId);
     @Modifying @Query("delete from PairMeeting p where p.meeting.group.id=:groupId")
     void deleteByMeetingGroupId(@Param("groupId") Long groupId);
 }

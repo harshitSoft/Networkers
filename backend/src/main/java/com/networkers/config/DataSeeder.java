@@ -22,6 +22,7 @@ public class DataSeeder {
     CommandLineRunner seedSuperAdmin(UserRepository users, PasswordEncoder encoder, JdbcTemplate jdbc) {
         return args -> {
             normalizeLegacyEnumColumns(jdbc);
+            migrateFaceToFaceCycles(jdbc);
             migrateLegacyRoles(users);
             if (!users.existsByEmail(adminEmail)) {
                 User admin = new User();
@@ -34,6 +35,16 @@ public class DataSeeder {
                 users.save(admin);
             }
         };
+    }
+
+    private void migrateFaceToFaceCycles(JdbcTemplate jdbc) {
+        // Hibernate can create the cycle table while missing additive columns
+        // on an existing legacy group table. Keep these migrations idempotent
+        // so every deployed backend can safely repair that schema on startup.
+        jdbc.execute("alter table monthly_meeting_groups add column if not exists cycle_id bigint");
+        jdbc.execute("alter table monthly_meeting_groups add column if not exists round_number integer not null default 0");
+        jdbc.execute("create index if not exists idx_meeting_groups_cycle on monthly_meeting_groups(cycle_id)");
+        jdbc.execute("do $$ begin if not exists (select 1 from pg_constraint where conname = 'fk_meeting_groups_cycle') then alter table monthly_meeting_groups add constraint fk_meeting_groups_cycle foreign key (cycle_id) references meeting_cycles(id); end if; end $$");
     }
 
     private void normalizeLegacyEnumColumns(JdbcTemplate jdbc) {

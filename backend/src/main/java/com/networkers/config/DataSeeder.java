@@ -55,6 +55,11 @@ public class DataSeeder {
         // PostgreSQL / Neon versions:
         jdbc.execute("alter table users alter column role type varchar(30) using role::text");
         jdbc.execute("alter table referral alter column status type varchar(30) using status::text");
+        // Older databases have a generated CHECK constraint that predates
+        // MEETING_MOMENT. Java's PostType enum remains the source of truth,
+        // while the text column allows new application enum values to deploy.
+        jdbc.execute("alter table post drop constraint if exists post_type_check");
+        jdbc.execute("alter table post alter column type type varchar(50) using type::text");
         migratePostgresLargeObjectText(jdbc, "users", "profile_image");
         migratePostgresLargeObjectText(jdbc, "chapter", "banner_image");
         migratePostgresLargeObjectText(jdbc, "event_image", "image_url");

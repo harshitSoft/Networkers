@@ -108,11 +108,14 @@ public class AdminController {
         if (request.mobile() == null || !request.mobile().matches("^\\d{10}$")) throw new IllegalArgumentException("Mobile number must contain exactly 10 digits");
         if (passwordRequired && (request.password() == null || request.password().length() < 8)) throw new IllegalArgumentException("Password must be at least 8 characters");
         if (request.password() != null && !request.password().isBlank() && request.password().length() < 8) throw new IllegalArgumentException("Password must be at least 8 characters");
+        if (passwordRequired && request.dateOfBirth() == null) throw new IllegalArgumentException("Date of birth is required");
+        if (request.dateOfBirth().isAfter(LocalDate.now())) throw new IllegalArgumentException("Date of birth cannot be in the future");
     }
     private void applyUser(User user, CreateUserRequest request, Long chapterId) {
         Chapter chapter = chapterId == null ? null : chapters.findById(chapterId).orElseThrow(() -> new EntityNotFoundException("Chapter not found"));
         user.setFullName(request.fullName().trim());
         user.setEmail(normalizeEmail(request.email()));
+        if (request.dateOfBirth() != null) user.setDateOfBirth(request.dateOfBirth());
         user.setMobile(request.mobile());
         user.setRole(request.role() == null ? Role.USER : request.role());
         user.setBusinessName(request.businessName());
@@ -132,7 +135,7 @@ public class AdminController {
     }
     public record CreateUserRequest(String fullName, String email, String mobile, String password, Role role,
                                     String businessName, String businessCategory, String services, String location,
-                                    Long chapterId, String subscriptionPlan, LocalDate subscriptionStartDate,
+                                    Long chapterId, String subscriptionPlan, LocalDate subscriptionStartDate, LocalDate dateOfBirth,
                                     LocalDate subscriptionEndDate, Boolean enabled, Long joinRequestId) {}
     public record CredentialRequest(String password) {}
 }

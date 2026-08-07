@@ -28,7 +28,7 @@ export default function UserChapters() {
   }
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Member chapters</p><h2 className="mt-1 page-title"><span className="text-[#E8262A]">Chapters</span></h2><p className="mt-1 text-sm text-slate-500">Select a chapter to discover its members for referrals.</p></div>
+      <div className="rounded-2xl bg-white p-5 shadow-premium"><h2 className="mt-1 page-title"><span className="text-[#E8262A]">Chapters</span></h2><p className="mt-1 text-sm text-slate-500">Select a chapter to discover its members for referrals.</p></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {chapters.map((chapter) => {
           const isMine = String(user?.chapterId || "") === String(chapter.id) || user?.chapterName === chapter.chapterName;

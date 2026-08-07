@@ -3,6 +3,7 @@ export const authApi = {
   register: (payload) => api.post("/auth/register", payload).then(unwrap),
   login: (payload) => api.post("/auth/login", payload).then(unwrap),
   me: () => api.get("/auth/me").then(unwrap),
+  todaysBirthdays: () => api.get("/auth/birthdays/today").then(unwrap),
   updateProfile: (payload) => api.put("/auth/profile", payload).then(unwrap),
   uploadProfileImage: (file) => {
     const data = new FormData();

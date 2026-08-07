@@ -22,6 +22,8 @@ function readDraft() {
   }
 }
 
+function ReferralMemberSkeleton(){return <div className="glass-card animate-pulse rounded-3xl p-6" aria-hidden="true"><div className="h-16 w-16 rounded-2xl bg-red-500/10"/><div className="mt-5 h-3 w-2/5 rounded-full bg-red-500/15"/><div className="mt-3 h-6 w-4/5 rounded-full bg-brand-border/10"/><div className="mt-3 h-3 w-3/5 rounded-full bg-brand-border/10"/><div className="mt-6 space-y-2"><div className="h-3 rounded-full bg-brand-border/10"/><div className="h-3 w-5/6 rounded-full bg-brand-border/10"/></div><div className="mt-6 h-10 w-36 rounded-xl bg-red-500/15"/></div>}
+
 export default function GiveReferral() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -29,14 +31,17 @@ export default function GiveReferral() {
   const [chapters, setChapters] = useState([]);
   const [members, setMembers] = useState([]);
   const [filters, setFilters] = useState({ chapterId: "", category: "", location: "", name: "" });
+  const [appliedFilters, setAppliedFilters] = useState(filters);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(initialDraft.form);
   const [prefilled, setPrefilled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const params = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value)), [filters]);
+  const params = useMemo(() => Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => value)), [appliedFilters]);
+  const memberLoading = loading || JSON.stringify(filters)!==JSON.stringify(appliedFilters);
 
   useEffect(() => { chapterApi.all().then(setChapters).catch(() => setChapters([])); }, []);
+  useEffect(() => { setLoading(true); const timer=window.setTimeout(()=>setAppliedFilters(filters),350); return()=>window.clearTimeout(timer); }, [filters]);
   useEffect(() => { let active=true;setLoading(true);memberApi.search(params).then((data)=>{if(active)setMembers(Array.isArray(data)?data:(data?.content||[]));}).catch((error)=>{console.error("Unable to load referral members",error);if(active){setMembers([]);toast.error(error.response?.data?.message||"Unable to load members");}}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}; }, [params]);
   useEffect(() => {
     const memberId = searchParams.get("memberId");
@@ -134,7 +139,7 @@ export default function GiveReferral() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="page-kicker">Referral flow</p>
+
         <h2 className="mt-1 page-title">Give <span className="text-[#E8262A]">Referral</span></h2>
         <p className="mt-1 text-sm text-slate-500">Find the right member by chapter, work category, location, or name. Cross-chapter referrals are allowed.</p>
       </div>
@@ -151,9 +156,10 @@ export default function GiveReferral() {
             <input className="field !pl-10" placeholder="Name or service" value={filters.name} onChange={(e) => setFilters({ ...filters, name: e.target.value })} />
           </div>
         </div>
+        {memberLoading&&<div className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand-accent" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-red-500/20 border-t-red-600"/>Finding matching members…</div>}
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {members.map((member) => (
+        {memberLoading?Array.from({length:6},(_,index)=><ReferralMemberSkeleton key={index}/>):members.map((member) => (
           <GlowCard as="article" key={member.id}>
             <div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl border border-brand-border/25 bg-brand-panel">{member.profileImage?<img src={member.profileImage} alt={member.fullName} className="h-full w-full object-cover"/>:<span className="grid h-full place-items-center text-xl font-black text-brand-accent">{member.fullName?.[0]||"N"}</span>}</div>
             <p className="text-sm font-black uppercase text-red-700">{member.businessCategory}</p>
@@ -169,7 +175,7 @@ export default function GiveReferral() {
           </GlowCard>
         ))}
       </div>
-      {!loading&&members.length===0&&<div className="glass-card rounded-3xl p-10 text-center"><Users className="mx-auto text-brand-accent"/><h3 className="mt-4 text-xl font-bold">No members found</h3><p className="mt-2 text-brand-muted">Try clearing or changing the search filters.</p></div>}
+      {!memberLoading&&members.length===0&&<div className="glass-card rounded-3xl p-10 text-center"><Users className="mx-auto text-brand-accent"/><h3 className="mt-4 text-xl font-bold">No members found</h3><p className="mt-2 text-brand-muted">Try clearing or changing the search filters.</p></div>}
       {selected && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
           <form onSubmit={submit} className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-2xl">

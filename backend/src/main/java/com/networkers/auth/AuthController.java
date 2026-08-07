@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,6 +55,16 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<Map<String, Object>> me() {
         return ApiResponse.ok("Current user", userDto(CurrentUser.get()));
+    }
+
+    @GetMapping("/birthdays/today")
+    public ApiResponse<java.util.List<Map<String, Object>>> todaysBirthdays() {
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+        var result = users.findAll().stream().filter(User::isEnabled).filter(u -> !u.isDeleted())
+                .filter(u -> u.getDateOfBirth() != null && u.getDateOfBirth().getMonthValue() == today.getMonthValue() && u.getDateOfBirth().getDayOfMonth() == today.getDayOfMonth())
+                .map(u -> Map.<String,Object>of("id", u.getId(), "fullName", u.getFullName(), "profileImage", u.getProfileImage() == null ? "" : u.getProfileImage()))
+                .toList();
+        return ApiResponse.ok("Today's birthdays", result);
     }
 
     @PutMapping("/profile")
@@ -142,6 +153,7 @@ public class AuthController {
         dto.put("subscriptionAmount", user.getSubscriptionAmount() == null ? 0 : user.getSubscriptionAmount());
         dto.put("subscriptionStartDate", user.getSubscriptionStartDate() == null ? "" : user.getSubscriptionStartDate().toString());
         dto.put("subscriptionEndDate", user.getSubscriptionEndDate() == null ? "" : user.getSubscriptionEndDate().toString());
+        dto.put("dateOfBirth", user.getDateOfBirth() == null ? "" : user.getDateOfBirth().toString());
         dto.put("enabled", user.isEnabled());
         return dto;
     }

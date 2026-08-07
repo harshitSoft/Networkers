@@ -67,7 +67,7 @@ export default function LandingPage() {
                 Grow Together.
               </span>
             </h1>
-            <p className="mt-8 max-w-xl text-lg leading-8 text-[#b3b3b3]">
+            <p className="mt-12 max-w-xl text-lg leading-8 text-[#b3b3b3]">
               Join an admin-managed chapter, build trusted relationships, and
               turn your professional network into measurable growth.
             </p>

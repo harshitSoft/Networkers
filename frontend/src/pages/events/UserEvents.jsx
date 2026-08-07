@@ -19,7 +19,7 @@ export default function UserEvents() {
     try {
       await eventApi.rsvp(id, status);
       setRsvps((current) => ({ ...current, [id]: status }));
-      toast.success(status === "GOING" ? "You are marked as coming" : "Response saved");
+      toast.success(status === "GOING" ? "You are marked as attending" : "You are marked as not attending");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not save response");
     }
@@ -29,7 +29,7 @@ export default function UserEvents() {
 
   return <div className="space-y-8">
     <div className="rounded-2xl bg-white p-5 shadow-premium">
-      <p className="page-kicker">Member events</p>
+
       <h2 className="mt-1 page-title">Chapter <span className="text-[#E8262A]">Events</span></h2>
       <p className="mt-1 text-sm text-slate-500">View event details and manage attendance separately.</p>
     </div>
@@ -53,10 +53,10 @@ function EventSection({ events }) {
 
 function AttendanceSection({ events, rsvps, onRespond }) {
   return <section className="space-y-3">
-    <div><h3 className="section-title !text-brand-primary">Event Attendance</h3><p className="mt-1 text-sm text-slate-500">Confirm whether you are coming to each event.</p></div>
+    <div><h3 className="section-title !text-brand-primary">Event Attendance</h3><p className="mt-1 text-sm text-slate-500">Confirm whether you will attend each event.</p></div>
     <div className="space-y-3">{events.map((event) => <div className="card flex flex-wrap items-center justify-between gap-4 p-4" key={event.id}>
       <div><p className="font-black">{event.title}</p><p className="text-sm text-slate-500">{event.eventDate}{event.eventTime ? ` at ${event.eventTime}` : ""}</p></div>
-      <div className="flex flex-wrap gap-2"><button onClick={() => onRespond(event.id, "GOING")} className={rsvps[event.id] === "GOING" ? "btn-primary" : "btn-muted"}>I’m coming</button><button onClick={() => onRespond(event.id, "NOT_GOING")} className={rsvps[event.id] === "NOT_GOING" ? "btn-primary" : "btn-muted"}>Not attending</button></div>
+      <div className="flex flex-wrap gap-2"><button onClick={() => onRespond(event.id, "GOING")} className={rsvps[event.id] === "GOING" ? "btn-primary" : "btn-muted"}>Attending</button><button onClick={() => onRespond(event.id, "NOT_GOING")} className={rsvps[event.id] === "NOT_GOING" ? "btn-primary" : "btn-muted"}>Not attending</button></div>
     </div>)}{events.length === 0 && <p className="text-sm text-slate-500">No upcoming events.</p>}</div>
   </section>;
 }

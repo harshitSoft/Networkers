@@ -53,10 +53,14 @@ public class EventController {
     @PostMapping("/api/admin/events")
     @Transactional
     public ApiResponse<Event> create(@RequestBody EventRequest request) {
+        if (request.title() == null || request.title().isBlank()) throw new IllegalArgumentException("Event title is required");
         if (request.eventDate() == null) throw new IllegalArgumentException("Event date is required");
         if (request.eventDate().isBefore(today())) throw new IllegalArgumentException("Past-date events cannot be created");
         Event event = new Event();
         apply(event, request);
+        var duplicate = events.findFirstByTitleIgnoreCaseAndEventDateAndEventTimeAndLocationAndChapter(
+                event.getTitle(), event.getEventDate(), event.getEventTime(), event.getLocation(), event.getChapter());
+        if (duplicate.isPresent()) return ApiResponse.ok("Matching event already exists", fullyLoaded(duplicate.get().getId()));
         Event saved = events.save(event);
         var recipients = eligibleMembers(saved);
         String chapterName = saved.getChapter() == null ? "All Chapters" : saved.getChapter().getChapterName();
@@ -64,7 +68,8 @@ public class EventController {
             notificationService.notify(user, "New event: " + saved.getTitle(), "You are invited to " + saved.getTitle() + " on " + saved.getEventDate() + (saved.getEventTime() == null ? "" : " at " + saved.getEventTime()) + ". Venue: " + (saved.getLocation() == null ? "To be announced" : saved.getLocation()) + ". Chapter: " + chapterName + ".");
             try { mail.sendEventInvitation(user.getFullName(), user.getEmail(), saved.getTitle(), saved.getEventDate().toString(), saved.getEventTime() == null ? "To be announced" : saved.getEventTime().toString(), saved.getLocation(), chapterName, saved.getDescription()); } catch (Exception ignored) {}
         });
-        return ApiResponse.ok("Event created and members notified", saved);
+        events.flush();
+        return ApiResponse.ok("Event created and members notified", fullyLoaded(saved.getId()));
     }
 
     @PutMapping("/api/admin/events/{id}")
@@ -102,7 +107,11 @@ public class EventController {
     }
 
     private Event find(Long id) {
-        return events.findById(id).orElseThrow(() -> new EntityNotFoundException("Event not found"));
+        return fullyLoaded(id);
+    }
+
+    private Event fullyLoaded(Long id) {
+        return events.findWithDetailsById(id).orElseThrow(() -> new EntityNotFoundException("Event not found"));
     }
 
     private LocalDate today() { return LocalDate.now(ZoneId.of("Asia/Kolkata")); }

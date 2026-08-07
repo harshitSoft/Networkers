@@ -2,5 +2,6 @@ function Person({side}){return <div className={`network-person ${side}`}><b clas
 
 export default function Loader({label="Connecting Networkers",fullScreen=false}){
   const content=<div className="networkers-loader" role="status" aria-live="polite" aria-label={label}><div className="handshake-brand">Network<span>ers</span></div><div className="handshake-stage" aria-hidden="true"><div className="handshake-ground"/><Person side="left"/><Person side="right"/><div className="handshake-glow">✦</div></div><p>{label}<span className="loader-dots"/></p></div>;
-  return fullScreen?<div className="networkers-loader-screen">{content}</div>:null;
+  if(fullScreen)return <div className="networkers-loader-screen">{content}</div>;
+  return <div className="flex min-h-40 items-center justify-center" role="status" aria-label={label}><span className="h-8 w-8 animate-spin rounded-full border-4 border-red-500/20 border-t-red-600"/><span className="sr-only">{label}</span></div>;
 }

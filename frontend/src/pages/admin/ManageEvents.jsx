@@ -67,9 +67,15 @@ export default function ManageEvents() {
         location: form.location.trim() || null,
         description: form.description.trim() || null,
       });
-      if (form.imageUrl) await eventApi.addImage(event.id, form.imageUrl);
-      if (imageFile) await eventApi.uploadImage(event.id, imageFile);
-      toast.success("Event created");
+      let imageFailed = false;
+      try {
+        if (form.imageUrl) await eventApi.addImage(event.id, form.imageUrl);
+        if (imageFile) await eventApi.uploadImage(event.id, imageFile);
+      } catch {
+        imageFailed = true;
+      }
+      if (imageFailed) toast.error("Event was created, but its image could not be uploaded. You can add it later.");
+      else toast.success("Event created");
       setForm(blank);
       setImageFile(null);
       load();
@@ -106,77 +112,57 @@ export default function ManageEvents() {
   };
   return (
     <div className="space-y-6">
-      <form onSubmit={submit} className="card p-5">
-        <h2 className="text-2xl font-black">Events</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <input
-            className="field"
-            required
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <input
-            className="field"
-            type="date"
-            required
-            min={localToday()}
-            value={form.eventDate}
-            onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
-          />
-          <input
-            className="field"
-            type="time"
-            value={form.eventTime}
-            onChange={(e) => setForm({ ...form, eventTime: e.target.value })}
-          />
-          <input
-            className="field"
-            placeholder="Location"
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-          />
-          <select
-            className="field"
-            value={form.chapterId}
-            onChange={(e) => setForm({ ...form, chapterId: e.target.value })}
-          >
-            <option value="">All chapters</option>
-            {chapters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.chapterName}
-              </option>
-            ))}
-          </select>
-          <input
-            className="field md:col-span-2"
-            placeholder="Image URL (optional)"
-            value={form.imageUrl}
-            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-          />
-          <label className="field cursor-pointer text-sm text-slate-400">
-            <input
-              className="sr-only"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-            />
-            {imageFile ? imageFile.name : "Upload event image"}
-          </label>
-          <textarea
-            className="field md:col-span-3"
-            rows="3"
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
+      <form onSubmit={submit} className="card overflow-hidden p-0">
+        <div className="border-b border-brand-border/15 px-5 py-5 sm:px-7">
+          <p className="page-kicker">Event management</p>
+          <h2 className="mt-1 text-2xl font-black">Create Event</h2>
+          <p className="mt-1 text-sm text-brand-muted">Add the event details, schedule, audience, and optional cover image.</p>
         </div>
-        <button
-          disabled={creating}
-          className="btn-primary mt-4 bg-red-700 hover:bg-red-800"
-        >
-          {creating ? "Creating Event..." : "Create Event"}
-        </button>
+        <div className="space-y-6 p-5 sm:p-7">
+          <label className="block text-sm font-bold">Event title <span className="text-red-500">*</span>
+            <input className="field mt-2" required placeholder="Enter event title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}/>
+          </label>
+
+          <section className="rounded-2xl border border-brand-border/15 bg-brand-panel/35 p-4">
+            <h3 className="mb-4 font-bold">Date and time</h3>
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(220px,.7fr)_1.3fr]">
+              <label className="block text-sm font-bold">Event date <span className="text-red-500">*</span>
+                <input className="field mt-2" type="date" required min={localToday()} value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })}/>
+              </label>
+              <Time12Field label="Event time" value={form.eventTime} onChange={(eventTime) => setForm({ ...form, eventTime })}/>
+            </div>
+          </section>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm font-bold">Location
+              <input className="field mt-2" placeholder="Venue or location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}/>
+            </label>
+            <label className="block text-sm font-bold">Audience
+              <select className="field mt-2" value={form.chapterId} onChange={(e) => setForm({ ...form, chapterId: e.target.value })}>
+                <option value="">All chapters</option>
+                {chapters.map((c) => <option key={c.id} value={c.id}>{c.chapterName}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <section className="rounded-2xl border border-brand-border/15 p-4">
+            <h3 className="font-bold">Event image <span className="text-sm font-normal text-brand-muted">(optional)</span></h3>
+            <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+              <input className="field" placeholder="Paste an image URL" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}/>
+              <label className="btn-muted cursor-pointer justify-center whitespace-nowrap">
+                <input className="sr-only" type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)}/>
+                {imageFile ? imageFile.name : "Choose image"}
+              </label>
+            </div>
+          </section>
+
+          <label className="block text-sm font-bold">Description
+            <textarea className="field mt-2" rows="4" placeholder="Describe the event, agenda, or any instructions" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}/>
+          </label>
+          <div className="flex justify-end border-t border-brand-border/15 pt-5">
+            <button disabled={creating} className="btn-primary min-w-40 justify-center bg-red-700 hover:bg-red-800">{creating ? "Creating Event..." : "Create Event"}</button>
+          </div>
+        </div>
       </form>
       <div className="flex gap-2">
         {["ALL", "UPCOMING", "COMPLETED"].map((value) => (
@@ -380,4 +366,42 @@ export default function ManageEvents() {
       )}
     </div>
   );
+}
+
+function Time12Field({ label, value, onChange }) {
+  const parse = (raw) => {
+    if (!raw) return ["", "", "AM"];
+    const [hour24, minute] = raw.split(":");
+    const numericHour = Number(hour24);
+    return [String(numericHour % 12 || 12).padStart(2, "0"), minute, numericHour >= 12 ? "PM" : "AM"];
+  };
+  const initial = parse(value);
+  const [hour, setHour] = useState(initial[0]);
+  const [minute, setMinute] = useState(initial[1]);
+  const [period, setPeriod] = useState(initial[2]);
+  useEffect(() => {
+    if (!value) { setHour(""); setMinute(""); setPeriod("AM"); }
+  }, [value]);
+  const update = (nextHour, nextMinute, nextPeriod) => {
+    setHour(nextHour); setMinute(nextMinute); setPeriod(nextPeriod);
+    if (!nextHour || nextMinute === "") return onChange("");
+    const hour24 = (Number(nextHour) % 12) + (nextPeriod === "PM" ? 12 : 0);
+    onChange(`${String(hour24).padStart(2, "0")}:${nextMinute}`);
+  };
+  return <fieldset className="rounded-xl border border-brand-border/20 p-3">
+    <legend className="px-1 text-sm font-bold text-brand-muted">{label}</legend>
+    <div className="grid grid-cols-3 gap-2">
+      <select className="field" aria-label={`${label} hour`} value={hour} onChange={(e) => update(e.target.value, minute, period)}>
+        <option value="">Hour</option>
+        {Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0")).map((item) => <option key={item}>{item}</option>)}
+      </select>
+      <select className="field" aria-label={`${label} minute`} value={minute} onChange={(e) => update(hour, e.target.value, period)}>
+        <option value="">Minute</option>
+        {Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0")).map((item) => <option key={item}>{item}</option>)}
+      </select>
+      <select className="field" aria-label={`${label} AM or PM`} value={period} onChange={(e) => update(hour, minute, e.target.value)}>
+        <option>AM</option><option>PM</option>
+      </select>
+    </div>
+  </fieldset>;
 }

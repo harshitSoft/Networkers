@@ -37,7 +37,15 @@ public class CommunityController {
     @PostMapping("/{id}/kudos") @Transactional public ApiResponse<PostView> kudos(@PathVariable Long id){Post p=get(id);User actor=CurrentUser.get();boolean alreadyGiven=p.getKudos().stream().anyMatch(u->u.getId().equals(actor.getId()));if(alreadyGiven)p.getKudos().removeIf(u->u.getId().equals(actor.getId()));else p.getKudos().add(actor);posts.saveAndFlush(p);return ApiResponse.ok("Kudos updated",view(p));}
     @PostMapping("/{id}/comments") @Transactional public ApiResponse<CommentView> comment(@PathVariable Long id,@RequestBody CommentRequest r){if(r.content()==null||r.content().isBlank())throw new IllegalArgumentException("Comment is required");Comment c=new Comment();c.setPost(get(id));c.setUser(CurrentUser.get());c.setContent(r.content().trim());return ApiResponse.ok("Comment added",commentView(comments.save(c)));}
     @PutMapping("/{id}") @Transactional public ApiResponse<PostView> update(@PathVariable Long id,@RequestBody UpdatePostRequest r){if(r.caption()==null||r.caption().isBlank())throw new IllegalArgumentException("Caption is required");Post p=owned(id);p.setContent(r.caption().trim());return ApiResponse.ok("Post updated",view(posts.save(p)));}
-    @DeleteMapping("/{id}") public ApiResponse<Void> delete(@PathVariable Long id){posts.delete(owned(id));return ApiResponse.ok("Post deleted",null);}
+    @DeleteMapping("/{id}") @Transactional
+    public ApiResponse<Void> delete(@PathVariable Long id){
+        Post post=owned(id);
+        comments.deleteByPost(post);
+        comments.flush();
+        posts.delete(post);
+        posts.flush();
+        return ApiResponse.ok("Post deleted permanently",null);
+    }
     private Post get(Long id){return posts.findById(id).orElseThrow(()->new EntityNotFoundException("Post not found"));}
     private Post owned(Long id){Post p=get(id);if(!p.getUser().getId().equals(CurrentUser.get().getId()))throw new SecurityException("Only the post owner can delete it");return p;}
     private PostView view(Post p){User current=CurrentUser.get();List<CommentView> cs=comments.findByPostOrderByCreatedAtAsc(p).stream().map(this::commentView).toList();List<MemberView> kudosMembers=p.getKudos().stream().map(this::memberView).toList();return new PostView(p.getId(),memberView(p.getUser()),p.getContent(),p.getMediaUrl(),p.getMediaType(),p.getMeeting()==null?null:p.getMeeting().getId(),p.getMeeting()==null?null:p.getMeeting().getGroup().getChapter().getChapterName(),p.getMentions().stream().map(this::memberView).toList(),kudosMembers.size(),p.getKudos().stream().anyMatch(u->u.getId().equals(current.getId())),kudosMembers,cs,p.getCreatedAt());}

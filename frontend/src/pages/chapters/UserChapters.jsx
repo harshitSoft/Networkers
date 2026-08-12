@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { chapterApi } from "../../api/chapterApi";
 import { useAuth } from "../../context/AuthContext.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
+import Loader from "../../components/Loader.jsx";
 
 export default function UserChapters() {
   const { user } = useAuth();
@@ -11,13 +12,21 @@ export default function UserChapters() {
   const [chapters, setChapters] = useState([]);
   const [selected, setSelected] = useState(null);
   const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(false);
   const membersRef = useRef(null);
-  useEffect(() => { chapterApi.all().then(setChapters).catch(() => setChapters([])); }, []);
+  useEffect(() => { chapterApi.all().then(setChapters).catch(() => setChapters([])).finally(() => setLoading(false)); }, []);
   async function selectChapter(chapter) {
     setSelected(chapter);
-    const data = await chapterApi.userMembers(chapter.id);
-    setMembers(Array.isArray(data) ? data : []);
-    requestAnimationFrame(() => membersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    setMembersLoading(true);
+    setMembers([]);
+    try {
+      const data = await chapterApi.userMembers(chapter.id);
+      setMembers(Array.isArray(data) ? data : []);
+      requestAnimationFrame(() => membersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    } finally {
+      setMembersLoading(false);
+    }
   }
   function openWhatsApp(member) {
     const digits = String(member.mobile || "").replace(/\D/g, "");
@@ -29,6 +38,8 @@ export default function UserChapters() {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-white p-5 shadow-premium"><h2 className="mt-1 page-title"><span className="text-[#E8262A]">Chapters</span></h2><p className="mt-1 text-sm text-slate-500">Select a chapter to discover its members for referrals.</p></div>
+      {loading && <Loader label="Loading chapters" />}
+      {!loading && <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {chapters.map((chapter) => {
           const isMine = String(user?.chapterId || "") === String(chapter.id) || user?.chapterName === chapter.chapterName;
@@ -51,7 +62,7 @@ export default function UserChapters() {
       {selected && (
         <section ref={membersRef} className="card scroll-mt-24 p-5">
           <div className="flex items-center gap-2"><Users className="text-red-700" size={20} /><h3 className="text-xl font-black">{selected.chapterName} Members</h3></div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {membersLoading ? <Loader label={`Loading ${selected.chapterName} members`} /> : <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {members.map((member) => (
               <GlowCard as="article" key={member.id}>
                 <div className="mb-4 flex items-center gap-3"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-red-500/30 bg-red-500/10">{member.profileImage?<img className="h-full w-full object-cover" src={member.profileImage} alt={member.fullName}/>:<span className="grid h-full place-items-center text-lg font-black text-red-500">{member.fullName?.[0]}</span>}</div><h4 className="font-black">{member.fullName}</h4></div>
@@ -63,9 +74,10 @@ export default function UserChapters() {
               </GlowCard>
             ))}
             {members.length === 0 && <p className="text-sm text-slate-500">No members assigned to this chapter yet.</p>}
-          </div>
+          </div>}
         </section>
       )}
+      </>}
     </div>
   );
 }

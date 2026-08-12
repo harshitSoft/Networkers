@@ -12,6 +12,7 @@ export const monthlyMeetingApi = {
   cycleOverview: (chapterId) => api.get(`/monthly-meetings/admin/cycles/chapters/${chapterId}`).then(unwrap),
   startCycle: (chapterId) => api.post(`/monthly-meetings/admin/chapters/${chapterId}/cycles/start`).then(unwrap),
   regenerateCycle: (cycleId) => api.post(`/monthly-meetings/admin/cycles/${cycleId}/regenerate`).then(unwrap),
+  endCycle: (cycleId) => api.post(`/monthly-meetings/admin/cycles/${cycleId}/end`).then(unwrap),
   mine: (month) => api.get("/monthly-meetings/mine", { params: month ? { month } : {} }).then(unwrap),
   edit: (id, payload) => api.put(`/monthly-meetings/${id}`, payload).then(unwrap),
   completePair: (meetingId, pairId, form) => api.post(`/monthly-meetings/${meetingId}/pairs/${pairId}/complete`, form).then(unwrap),

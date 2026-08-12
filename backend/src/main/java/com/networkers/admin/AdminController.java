@@ -109,7 +109,7 @@ public class AdminController {
         if (passwordRequired && (request.password() == null || request.password().length() < 8)) throw new IllegalArgumentException("Password must be at least 8 characters");
         if (request.password() != null && !request.password().isBlank() && request.password().length() < 8) throw new IllegalArgumentException("Password must be at least 8 characters");
         if (passwordRequired && request.dateOfBirth() == null) throw new IllegalArgumentException("Date of birth is required");
-        if (request.dateOfBirth().isAfter(LocalDate.now())) throw new IllegalArgumentException("Date of birth cannot be in the future");
+        if (request.dateOfBirth() != null && request.dateOfBirth().isAfter(LocalDate.now())) throw new IllegalArgumentException("Date of birth cannot be in the future");
     }
     private void applyUser(User user, CreateUserRequest request, Long chapterId) {
         Chapter chapter = chapterId == null ? null : chapters.findById(chapterId).orElseThrow(() -> new EntityNotFoundException("Chapter not found"));

@@ -33,6 +33,7 @@ export default function Profile() {
   const [tab, setTab] = useState("personal");
   const [personal, setPersonal] = useState({
     fullName: user.fullName || "",
+    email: user.email || "",
     mobile: normalizePhone(user.mobile),
     location: user.location || "",
   });
@@ -64,8 +65,10 @@ export default function Profile() {
   async function savePersonal(e) {
     e.preventDefault();
     try {
-      const updated = await authApi.updateProfile(personal);
-      updateCurrentUser(updated);
+      const updated = await authApi.updateProfile({ ...personal, email: personal.email.trim().toLowerCase() });
+      localStorage.setItem("networkers_token", updated.token);
+      updateCurrentUser(updated.user);
+      setPersonal((current) => ({ ...current, email: updated.user.email }));
       toast.success("Personal profile updated");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not update profile");
@@ -165,6 +168,7 @@ export default function Profile() {
         >
           {[
             ["fullName", "Full name", "text"],
+            ["email", "Login email", "email"],
             ["mobile", "Contact number", "tel"],
             ["location", "Location", "text"],
           ].map(([key, label, type]) => (
@@ -176,7 +180,6 @@ export default function Profile() {
               onChange={(v) => setPersonal((current) => ({ ...current, [key]: key === "mobile" ? normalizePhone(v) : v }))}
             />
           ))}
-          <Field label="Login email" value={user.email} disabled />
           <button className="btn-primary mt-2">
             <Save size={17} />
             Save personal profile

@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Frown } from "lucide-react";
 import { referralApi } from "../../api/referralApi";
 import EmptyState from "../../components/EmptyState.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
+import Loader from "../../components/Loader.jsx";
 
 const flow = ["NEW", "ACCEPTED", "IN_DISCUSSION", "CONFIRMED", "COMPLETED"];
 const labels = { NEW: "New", ACCEPTED: "Accepted", IN_DISCUSSION: "In Discussion", CONFIRMED: "Confirmed", COMPLETED: "Completed" };
@@ -61,7 +62,7 @@ export default function ReferralsReceived() {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Referral inbox</p><h2 className="mt-1 page-title">Referrals <span className="text-[#E8262A]">Received</span></h2></div>
-      {items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} updating={updatingId === r.id} />} />)}
+      {loading ? <Loader label="Loading received referrals" /> : items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} updating={updatingId === r.id} />} />)}
       {!loading && items.length === 0 && <EmptyState icon={Frown} title="No referrals received" message="Referral requests assigned to you will appear here." />}
       {completeTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">

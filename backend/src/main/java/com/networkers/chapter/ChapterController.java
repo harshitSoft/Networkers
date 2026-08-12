@@ -32,8 +32,7 @@ public class ChapterController {
     @PostMapping("/api/admin/chapters")
     public ApiResponse<Map<String, Object>> create(@RequestBody ChapterRequest request) {
         if (request.chapterNumber() == null) throw new IllegalArgumentException("Chapter number is required");
-        Chapter chapter = chapters.findByChapterNumber(request.chapterNumber()).orElseGet(Chapter::new);
-        if (chapter.getId() != null && chapter.isActive()) throw new IllegalArgumentException("Chapter number " + request.chapterNumber() + " already exists");
+        Chapter chapter = new Chapter();
         apply(chapter, request);
         return ApiResponse.ok(chapter.getId() == null ? "Chapter created" : "Chapter reactivated", dto(chapters.save(chapter)));
     }

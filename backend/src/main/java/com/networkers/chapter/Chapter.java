@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Entity
 public class Chapter {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
-    @Column(unique = true) private Integer chapterNumber;
+    private Integer chapterNumber;
     private String chapterName;
     @Column(length = 2000) private String description;
     @Column(columnDefinition = "TEXT") private String bannerImage;

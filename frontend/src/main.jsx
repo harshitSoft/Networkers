@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <ErrorBoundary>
         <ThemeProvider><AuthProvider>
           <App />
-          <Toaster position="top-right" />
+          <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
         </AuthProvider></ThemeProvider>
       </ErrorBoundary>
     </BrowserRouter>

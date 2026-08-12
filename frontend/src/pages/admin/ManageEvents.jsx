@@ -106,7 +106,7 @@ export default function ManageEvents() {
     toast.success("Attendance updated");
   }
   const counts = {
-    GOING: rsvps.filter((r) => r.status === "GOING").length,
+    GOING: rsvps.filter((r) => r.status === "GOING" || r.status === "ATTENDED").length,
     NOT_GOING: rsvps.filter((r) => r.status === "NOT_GOING").length,
     PENDING: rsvps.filter((r) => r.status === "PENDING").length,
   };
@@ -197,7 +197,7 @@ export default function ManageEvents() {
             <td>{event.location}</td>
             <td>{event.images?.length || 0} images</td>
             <td>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
                 <button
                   className="btn-primary !px-3 !py-2"
                   onClick={() => setSelectedEvent(event)}
@@ -304,7 +304,8 @@ export default function ManageEvents() {
                   .filter(
                     (r) =>
                       attendanceFilter === "ALL" ||
-                      r.status === attendanceFilter,
+                      r.status === attendanceFilter ||
+                      (attendanceFilter === "GOING" && r.status === "ATTENDED"),
                   )
                   .map((r) => (
                     <div

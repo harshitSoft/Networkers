@@ -70,10 +70,15 @@ public class AuthController {
     @PutMapping("/profile")
     public ApiResponse<Map<String, Object>> updateProfile(@Valid @RequestBody ProfileRequest request) {
         User user = CurrentUser.get();
-        user.setFullName(request.fullName());
+        String email = request.email().trim().toLowerCase();
+        users.findByEmail(email).filter(existing -> !existing.getId().equals(user.getId())).ifPresent(existing -> {
+            throw new IllegalArgumentException("Email already registered");
+        });
+        user.setFullName(request.fullName().trim());
+        user.setEmail(email);
         user.setMobile(request.mobile());
         user.setLocation(request.location());
-        return ApiResponse.ok("Personal profile updated", userDto(users.save(user)));
+        return ApiResponse.ok("Personal profile updated", authPayload(users.save(user)));
     }
 
     @PutMapping("/change-password")
@@ -164,7 +169,7 @@ public class AuthController {
             if (email != null) email = email.trim().toLowerCase();
         }
     }
-    public record ProfileRequest(@NotBlank String fullName, String mobile, String location) {}
+    public record ProfileRequest(@NotBlank String fullName, @Email @NotBlank String email, String mobile, String location) {}
     public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {}
     public record ConfirmPasswordOtpRequest(@NotBlank String otp, @NotBlank String newPassword) {}
     public record ForgotPasswordRequest(@Email @NotBlank String email) {}

@@ -4,15 +4,19 @@ import toast from "react-hot-toast";
 import { eventApi } from "../../api/eventApi";
 import { useAuth } from "../../context/AuthContext.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
+import Loader from "../../components/Loader.jsx";
 
 export default function UserEvents() {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    eventApi.upcoming().then(setEvents).catch(() => setEvents([]));
-    eventApi.myRsvps().then(setRsvps).catch(() => setRsvps({}));
+    Promise.allSettled([
+      eventApi.upcoming().then(setEvents).catch(() => setEvents([])),
+      eventApi.myRsvps().then(setRsvps).catch(() => setRsvps({})),
+    ]).finally(() => setLoading(false));
   }, []);
 
   async function respond(id, status) {
@@ -25,7 +29,20 @@ export default function UserEvents() {
     }
   }
 
-  const visible = events.filter((event) => !event.chapter || event.chapter.id === user?.chapterId || event.chapter.chapterName === user?.chapterName);
+  const userChapterId = user?.chapterId ?? user?.chapter?.id;
+  const userChapterName = user?.chapterName ?? user?.chapter?.chapterName;
+  const visible = events.filter((event) => {
+    if (!event.chapter) return true;
+
+    const eventChapterId = event.chapter.id;
+    if (eventChapterId != null && userChapterId != null) {
+      return String(eventChapterId) === String(userChapterId);
+    }
+
+    const eventChapterName = event.chapter.chapterName?.trim().toLowerCase();
+    const memberChapterName = userChapterName?.trim().toLowerCase();
+    return Boolean(eventChapterName && memberChapterName && eventChapterName === memberChapterName);
+  });
 
   return <div className="space-y-8">
     <div className="rounded-2xl bg-white p-5 shadow-premium">
@@ -33,8 +50,7 @@ export default function UserEvents() {
       <h2 className="mt-1 page-title">Chapter <span className="text-[#E8262A]">Events</span></h2>
       <p className="mt-1 text-sm text-slate-500">View event details and manage attendance separately.</p>
     </div>
-    <EventSection events={visible} />
-    <AttendanceSection events={visible} rsvps={rsvps} onRespond={respond} />
+    {loading ? <Loader label="Loading chapter events" /> : <><EventSection events={visible} /><AttendanceSection events={visible} rsvps={rsvps} onRespond={respond} /></>}
   </div>;
 }
 

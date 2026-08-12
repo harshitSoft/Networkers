@@ -7,5 +7,6 @@ import java.util.*;
 public interface MeetingCycleRepository extends JpaRepository<MeetingCycle,Long> {
     Optional<MeetingCycle> findFirstByChapterIdOrderByCycleNumberDesc(Long chapterId);
     Optional<MeetingCycle> findFirstByChapterIdAndStatusOrderByCycleNumberDesc(Long chapterId,MeetingCycleStatus status);
+    List<MeetingCycle> findByChapterIdAndStatusOrderByCycleNumberDesc(Long chapterId,MeetingCycleStatus status);
     List<MeetingCycle> findByStatusAndNextCycleDateLessThanEqual(MeetingCycleStatus status,LocalDate date);
 }

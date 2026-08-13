@@ -16,7 +16,7 @@ export default function useFormValidation() {
           field.pattern = "[0-9]{10}"; field.title = "Enter a valid 10-digit mobile number";
         } else if (/email/.test(hint)) {
           field.type = "email"; field.maxLength = 254;
-        } else if (/website|url/.test(hint) && field.type !== "file") {
+        } else if (/website|url/.test(hint) && field.type !== "file" && !field.hasAttribute("data-accept-domain")) {
           field.type = "url"; field.title = "Enter a complete URL, for example https://example.com";
         } else if (field.type === "password") {
           field.minLength = Math.max(field.minLength, 8); field.maxLength = 128;

@@ -1,7 +1,9 @@
 import api, { unwrap } from "./axios";
+import { cachedRequest } from "./requestCache";
 
 export const chapterApi = {
-  all: () => api.get("/chapters").then(unwrap),
+  all: () => cachedRequest("chapters:all", () => api.get("/chapters").then(unwrap), 300000),
+  options: () => cachedRequest("chapters:options", () => api.get("/chapters/options").then(unwrap), 300000),
   one: (id) => api.get(`/chapters/${id}`).then(unwrap),
   create: (payload) => api.post("/admin/chapters", payload).then(unwrap),
   update: (id, payload) => api.put(`/admin/chapters/${id}`, payload).then(unwrap),

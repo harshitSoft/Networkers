@@ -40,7 +40,7 @@ export default function GiveReferral() {
   const params = useMemo(() => Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => value)), [appliedFilters]);
   const memberLoading = loading || JSON.stringify(filters)!==JSON.stringify(appliedFilters);
 
-  useEffect(() => { chapterApi.all().then(setChapters).catch(() => setChapters([])); }, []);
+  useEffect(() => { chapterApi.options().then(setChapters).catch(() => setChapters([])); }, []);
   useEffect(() => { setLoading(true); const timer=window.setTimeout(()=>setAppliedFilters(filters),350); return()=>window.clearTimeout(timer); }, [filters]);
   useEffect(() => { let active=true;setLoading(true);memberApi.search(params).then((data)=>{if(active)setMembers(Array.isArray(data)?data:(data?.content||[]));}).catch((error)=>{console.error("Unable to load referral members",error);if(active){setMembers([]);toast.error(error.response?.data?.message||"Unable to load members");}}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}; }, [params]);
   useEffect(() => {

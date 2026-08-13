@@ -19,6 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import com.networkers.common.PageResponse;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RestController
 public class ReferralController {
@@ -39,24 +42,27 @@ public class ReferralController {
                                                           @RequestParam(required = false) String location,
                                                           @RequestParam(required = false) String name) {
         Long currentUserId = CurrentUser.get().getId();
-        return ApiResponse.ok("Members", users.searchMembers(chapterId, normalizeFilter(category), normalizeFilter(location), normalizeFilter(name)).stream()
+        List<User> matches=users.searchMembers(chapterId, normalizeFilter(category), normalizeFilter(location), normalizeFilter(name)).stream()
                 .filter(user -> !user.getId().equals(currentUserId))
-                .map(this::memberDto).toList());
+                .toList();
+        Map<Long,BusinessProfile> profiles=businessProfiles.findByUserIn(matches).stream().collect(java.util.stream.Collectors.toMap(p->p.getUser().getId(),p->p));
+        return ApiResponse.ok("Members",matches.stream().map(user->memberDto(user,profiles.get(user.getId()))).toList());
     }
 
     @GetMapping("/api/referrals/dashboard")
     public ApiResponse<Map<String, Object>> dashboard() {
         User user = CurrentUser.get();
         LocalDate now = LocalDate.now();
+        BigDecimal totalGiven=revenues.totalGiven(user),totalEarned=revenues.totalEarned(user);
         return ApiResponse.ok("Referral dashboard", Map.of(
                 "referralsGiven", referrals.countByGivenBy(user),
                 "referralsReceived", referrals.countByReceivedBy(user),
-                "businessRevenueGiven", revenues.totalGiven(user),
-                "businessRevenueEarned", revenues.totalEarned(user),
+                "businessRevenueGiven", totalGiven,
+                "businessRevenueEarned", totalEarned,
                 "thisMonthBusinessGiven", revenues.monthGiven(user, now.getMonthValue(), now.getYear()),
                 "thisMonthBusinessEarned", revenues.monthEarned(user, now.getMonthValue(), now.getYear()),
-                "totalBusinessGiven", revenues.totalGiven(user),
-                "totalBusinessEarned", revenues.totalEarned(user),
+                "totalBusinessGiven", totalGiven,
+                "totalBusinessEarned", totalEarned,
                 "currentChapter", user.getChapter() == null ? "" : user.getChapter().getChapterName(),
                 "activeSubscription", user.getSubscriptionPlan() == null ? "" : user.getSubscriptionPlan()));
     }
@@ -146,6 +152,8 @@ public class ReferralController {
     }
     @GetMapping("/api/referrals/received") public ApiResponse<List<Referral>> received() { return ApiResponse.ok("Received referrals", referrals.findByReceivedByOrderByCreatedAtDesc(CurrentUser.get())); }
     @GetMapping("/api/referrals/given") public ApiResponse<List<Referral>> given() { return ApiResponse.ok("Given referrals", referrals.findByGivenByOrderByCreatedAtDesc(CurrentUser.get())); }
+    @GetMapping("/api/referrals/received/page") public ApiResponse<PageResponse<Referral>> receivedPage(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){var result=referrals.findByReceivedBy(CurrentUser.get(),pageable(page,size));return ApiResponse.ok("Received referrals",new PageResponse<>(result.getContent(),result.getNumber(),result.getSize(),result.getTotalElements(),result.getTotalPages()));}
+    @GetMapping("/api/referrals/given/page") public ApiResponse<PageResponse<Referral>> givenPage(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){var result=referrals.findByGivenBy(CurrentUser.get(),pageable(page,size));return ApiResponse.ok("Given referrals",new PageResponse<>(result.getContent(),result.getNumber(),result.getSize(),result.getTotalElements(),result.getTotalPages()));}
     @GetMapping("/api/referrals/{id}") public ApiResponse<Referral> one(@PathVariable Long id) { return ApiResponse.ok("Referral", allowed(id)); }
     @PutMapping("/api/referrals/{id}/status") @Transactional public ApiResponse<Referral> status(@PathVariable Long id, @RequestBody StatusRequest request) {
         Referral r = allowed(id);
@@ -179,6 +187,7 @@ public class ReferralController {
         if (!r.getGivenBy().getId().equals(uid) && !r.getReceivedBy().getId().equals(uid)) throw new IllegalStateException("Not allowed");
         return r;
     }
+    private org.springframework.data.domain.Pageable pageable(int page,int size){return PageRequest.of(Math.max(0,page),Math.min(100,Math.max(1,size)),Sort.by(Sort.Direction.DESC,"createdAt"));}
     private boolean isAllowedNext(ReferralStatus current, ReferralStatus next) {
         if (current == null) current = ReferralStatus.NEW;
         return switch (current) {
@@ -226,8 +235,7 @@ public class ReferralController {
         post.getMentions().add(giver);
         posts.save(post);
     }
-    private Map<String, Object> memberDto(User user) {
-        BusinessProfile profile = businessProfiles.findByUser(user).orElse(null);
+    private Map<String, Object> memberDto(User user,BusinessProfile profile) {
         return Map.of(
                 "id", user.getId(),
                 "fullName", user.getFullName() == null ? "" : user.getFullName(),

@@ -15,11 +15,14 @@ export default function ReferralsReceived() {
   const [completeForm, setCompleteForm] = useState({ confirmedAmount: "", note: "" });
   const [updatingId, setUpdatingId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageInfo, setPageInfo] = useState({ totalPages: 0, totalElements: 0 });
   const load = async () => {
     setLoading(true);
     try {
-      const data = await referralApi.received();
-      setItems(Array.isArray(data) ? data : []);
+      const data = await referralApi.receivedPage(page, 20);
+      setItems(data?.content || []);
+      setPageInfo({ totalPages: data?.totalPages || 0, totalElements: data?.totalElements || 0 });
     } catch (error) {
       setItems([]);
       toast.error(error.response?.data?.message || "Unable to load received referrals");
@@ -27,7 +30,7 @@ export default function ReferralsReceived() {
       setLoading(false);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page]);
   async function update(referral, status) {
     if (status === "COMPLETED") {
       setCompleteTarget(referral);
@@ -64,6 +67,7 @@ export default function ReferralsReceived() {
       <div className="rounded-2xl bg-white p-5 shadow-premium"><p className="page-kicker">Referral inbox</p><h2 className="mt-1 page-title">Referrals <span className="text-[#E8262A]">Received</span></h2></div>
       {loading ? <Loader label="Loading received referrals" /> : items.map((r) => <ReferralPanel key={r.id} referral={r} actions={<StatusFlow referral={r} onStep={update} updating={updatingId === r.id} />} />)}
       {!loading && items.length === 0 && <EmptyState icon={Frown} title="No referrals received" message="Referral requests assigned to you will appear here." />}
+      {!loading && pageInfo.totalPages > 1 && <PageControls page={page} totalPages={pageInfo.totalPages} totalElements={pageInfo.totalElements} onPage={setPage} />}
       {completeTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">
           <form onSubmit={complete} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
@@ -83,6 +87,8 @@ export default function ReferralsReceived() {
     </div>
   );
 }
+
+function PageControls({page,totalPages,totalElements,onPage}){return <div className="flex flex-wrap items-center justify-center gap-3"><button className="btn-muted" disabled={page===0} onClick={()=>onPage(page-1)}>Previous</button><span className="text-sm text-brand-muted">Page {page+1} of {totalPages} · {totalElements} referrals</span><button className="btn-primary" disabled={page+1>=totalPages} onClick={()=>onPage(page+1)}>Next</button></div>}
 
 function StatusFlow({ referral, onStep, updating }) {
   const currentIndex = flow.indexOf(referral.status);

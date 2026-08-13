@@ -6,10 +6,15 @@ import org.springframework.data.jpa.repository.Query;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ReferralRepository extends JpaRepository<Referral, Long> {
     List<Referral> findByReceivedByOrderByCreatedAtDesc(User user);
     List<Referral> findByGivenByOrderByCreatedAtDesc(User user);
+    Page<Referral> findByReceivedBy(User user, Pageable pageable);
+    Page<Referral> findByGivenBy(User user, Pageable pageable);
     Optional<Referral> findByOpenReferralPostAndReceivedBy(OpenReferralPost post, User user);
     long countByStatus(ReferralStatus status);
     long countByGivenBy(User user);
@@ -30,4 +35,8 @@ public interface ReferralRepository extends JpaRepository<Referral, Long> {
     BigDecimal totalBusinessGivenBy(User user);
     @Query("select year(r.updatedAt),month(r.updatedAt),coalesce(sum(coalesce(r.confirmedAmount,r.businessValue,0)),0) from Referral r where r.status in (com.networkers.referral.ReferralStatus.CONFIRMED,com.networkers.referral.ReferralStatus.COMPLETED,com.networkers.referral.ReferralStatus.CONVERTED) group by year(r.updatedAt),month(r.updatedAt) order by year(r.updatedAt),month(r.updatedAt)")
     List<Object[]> monthlyNetworkBusiness();
+    @Query("select r.givenBy.id, count(r) from Referral r where r.createdAt >= :start and r.createdAt < :end group by r.givenBy.id")
+    List<Object[]> referralCountsByGiver(LocalDateTime start, LocalDateTime end);
+    @Query("select r.givenBy.id, coalesce(sum(coalesce(r.confirmedAmount,r.businessValue,0)),0) from Referral r where r.updatedAt >= :start and r.updatedAt < :end and r.status in (com.networkers.referral.ReferralStatus.CONFIRMED,com.networkers.referral.ReferralStatus.COMPLETED,com.networkers.referral.ReferralStatus.CONVERTED) group by r.givenBy.id")
+    List<Object[]> businessTotalsByGiver(LocalDateTime start, LocalDateTime end);
 }

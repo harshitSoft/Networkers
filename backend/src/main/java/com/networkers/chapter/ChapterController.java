@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Base64;
+import org.springframework.cache.annotation.Cacheable;
 
 @RestController
 public class ChapterController {
@@ -23,6 +24,9 @@ public class ChapterController {
     public ApiResponse<List<Map<String, Object>>> publicChapters() {
         return ApiResponse.ok("Chapters", chapters.findByActiveTrueOrderByChapterNumberAsc().stream().map(this::dto).toList());
     }
+    @GetMapping("/api/chapters/options")
+    @Cacheable("chapterOptions")
+    public ApiResponse<List<Map<String,Object>>> chapterOptions(){return ApiResponse.ok("Chapter options",chapters.findByActiveTrueOrderByChapterNumberAsc().stream().map(c->Map.<String,Object>of("id",c.getId(),"chapterName",c.getChapterName())).toList());}
 
     @GetMapping("/api/chapters/{id}")
     public ApiResponse<Map<String, Object>> publicChapter(@PathVariable Long id) {

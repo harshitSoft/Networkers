@@ -31,12 +31,15 @@ export default function ReferralsGiven() {
   const [items, setItems] = useState([]);
   const [activeFilter, setActiveFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageInfo, setPageInfo] = useState({ totalPages: 0, totalElements: 0 });
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await referralApi.given();
-      setItems(Array.isArray(data) ? data : []);
+      const data = await referralApi.givenPage(page, 20);
+      setItems(data?.content || []);
+      setPageInfo({ totalPages: data?.totalPages || 0, totalElements: data?.totalElements || 0 });
     } catch (error) {
       setItems([]);
       toast.error(error.response?.data?.message || "Unable to load given referrals");
@@ -45,7 +48,7 @@ export default function ReferralsGiven() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page]);
 
   const counts = useMemo(() => Object.fromEntries(filters.map((filter) => [filter.id, items.filter((item) => filter.matches(item.status)).length])), [items]);
   const selected = filters.find((filter) => filter.id === activeFilter) || filters[0];
@@ -62,7 +65,7 @@ export default function ReferralsGiven() {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-muted">Track every referral you have shared and quickly review its current progress.</p>
           </div>
           <div className="rounded-2xl border border-brand-border/40 bg-brand-base/60 px-5 py-3 text-right backdrop-blur">
-            <p className="text-3xl font-black text-brand-primary">{items.length}</p>
+            <p className="text-3xl font-black text-brand-primary">{pageInfo.totalElements}</p>
             <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">Total given</p>
           </div>
         </div>
@@ -86,6 +89,7 @@ export default function ReferralsGiven() {
       </section>}
 
       {!loading && filteredItems.length === 0 && <EmptyState title={activeFilter === "ALL" ? "No referrals given" : `No ${selected.label.toLowerCase()} referrals`} message={activeFilter === "ALL" ? "Use Give Referral to send client work to the correct member." : "There are no referrals in this status right now. Choose another filter to continue browsing."} actionLabel={activeFilter === "ALL" ? "Give Referral" : undefined} actionTo={activeFilter === "ALL" ? "/give-referral" : undefined} />}
+      {!loading && pageInfo.totalPages > 1 && <div className="flex flex-wrap items-center justify-center gap-3"><button className="btn-muted" disabled={page===0} onClick={()=>setPage(page-1)}>Previous</button><span className="text-sm text-brand-muted">Page {page+1} of {pageInfo.totalPages} · {pageInfo.totalElements} referrals</span><button className="btn-primary" disabled={page+1>=pageInfo.totalPages} onClick={()=>setPage(page+1)}>Next</button></div>}
     </div>
   );
 }

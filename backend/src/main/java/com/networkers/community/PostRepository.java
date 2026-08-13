@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public interface PostRepository extends JpaRepository<Post, Long> {
     long countByUser(com.networkers.user.User user);
     @Query("select count(p) from Post p join p.kudos k where k = :user") long countKudosGivenBy(@Param("user") com.networkers.user.User user);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths={"user","meeting.group.chapter","mentions","kudos"})
     List<Post> findAllByOrderByCreatedAtDesc();
     List<Post> findByCreatedAtBefore(LocalDateTime cutoff);
     @Modifying

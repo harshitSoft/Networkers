@@ -64,7 +64,7 @@ public class BusinessController {
         p.setCity(r.city());
         p.setState(r.state());
         p.setAddress(r.address());
-        p.setWebsite(r.website());
+        p.setWebsite(normalizeWebsite(r.website()));
         p.setBusinessEmail(r.businessEmail());
         p.setBusinessPhone(r.businessPhone());
         p.setFoundedYear(r.foundedYear());
@@ -74,6 +74,12 @@ public class BusinessController {
     }
 
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value; }
+
+    private static String normalizeWebsite(String value) {
+        if (value == null || value.isBlank()) return value;
+        String website = value.trim();
+        return website.matches("(?i)^https?://.*") ? website : "https://" + website;
+    }
 
     public record BusinessProfileRequest(@NotBlank String businessName, String ownerName, String category, String description,
                                          String services, String lookingFor, String city, String state, String address,

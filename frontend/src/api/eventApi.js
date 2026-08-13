@@ -1,11 +1,12 @@
 import api, { unwrap } from "./axios";
+import { cachedRequest, invalidateRequest } from "./requestCache";
 
 export const eventApi = {
   all: () => api.get("/events").then(unwrap),
-  upcoming: () => api.get("/events/upcoming").then(unwrap),
+  upcoming: () => cachedRequest("events:upcoming", () => api.get("/events/upcoming").then(unwrap), 60000),
   one: (id) => api.get(`/events/${id}`).then(unwrap),
-  myRsvps: () => api.get("/events/rsvps/mine").then(unwrap),
-  rsvp: (id, status) => api.put(`/events/${id}/rsvp`, { status }).then(unwrap),
+  myRsvps: () => cachedRequest("events:rsvps:mine", () => api.get("/events/rsvps/mine").then(unwrap), 30000),
+  rsvp: (id, status) => api.put(`/events/${id}/rsvp`, { status }).then(unwrap).then((value) => { invalidateRequest("events:rsvps:mine"); return value; }),
   rsvpList: (id) => api.get(`/admin/events/${id}/rsvps`).then(unwrap),
   confirmAttendance: (eventId, userId, status) => api.put(`/admin/events/${eventId}/rsvps/${userId}`, { status }).then(unwrap),
   create: (payload) => api.post("/admin/events", payload).then(unwrap),

@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
 import { businessApi } from "../../api/businessApi";
 import PasswordField from "../../components/PasswordField.jsx";
-import { normalizePhone } from "../../utils/formValues.js";
+import { normalizePhone, normalizeWebsite } from "../../utils/formValues.js";
 const emptyBusiness = {
   businessName: "",
   ownerName: "",
@@ -110,6 +110,7 @@ export default function Profile() {
     try {
       const payload = {
         ...business,
+        website: normalizeWebsite(business.website),
         foundedYear: business.foundedYear ? Number(business.foundedYear) : null,
       };
       const saved = hasBusiness
@@ -280,9 +281,13 @@ export default function Profile() {
               key={key}
               label={label}
               required={key === "businessName"}
-              type={type}
+              type={key === "website" ? "text" : type}
+              inputMode={key === "website" ? "url" : undefined}
+              placeholder={key === "website" ? "www.example.com" : undefined}
+              acceptDomain={key === "website"}
               value={business[key] ?? ""}
               onChange={(v) => setBusiness((current) => ({ ...current, [key]: key === "businessPhone" ? normalizePhone(v) : v }))}
+              onBlur={key === "website" ? () => setBusiness((current) => ({ ...current, website: normalizeWebsite(current.website) })) : undefined}
             />
           ))}
           <button className="btn-primary mt-2 md:col-span-2">
@@ -386,13 +391,17 @@ function Field({
   disabled = false,
   required = false,
   minLength,
+  inputMode,
+  placeholder,
+  acceptDomain = false,
+  onBlur,
 }) {
   return (
     <label className="block">
       <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
-      {type === "password" ? <PasswordField value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} /> : <input className="field" type={type} value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} />}
+      {type === "password" ? <PasswordField value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} /> : <input className="field" type={type} inputMode={inputMode} placeholder={placeholder} data-accept-domain={acceptDomain ? "true" : undefined} value={value} disabled={disabled} required={required} minLength={minLength} onChange={(e) => onChange?.(e.target.value)} onBlur={onBlur} />}
     </label>
   );
 }

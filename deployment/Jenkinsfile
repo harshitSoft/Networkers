@@ -4,10 +4,10 @@ pipeline {
 
     environment {
         // Credentials
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_ACCOUNT_ID = credentials('aws-rahul-account-id')
-        EC2_INSTANCE = credentials('aws-hns-app-server-with-ip')
+        AWS_ACCESS_KEY_ID = credentials('networkers-aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('networkers-aws-secret-access-key')
+        AWS_ACCOUNT_ID = credentials('networkers-aws-account-id')
+        EC2_INSTANCE = credentials('networkers-server-ip')
         BACKEND_ECR_REPOSITORY = 'networkers-backend-app'
         FRONTEND_ECR_REPOSITORY = 'networkers-frontend-app'
         GITHUB_PAT = credentials('hrms-git-token')
@@ -36,11 +36,11 @@ pipeline {
         BASE_DIR='/home/ubuntu/networkers'
         HEALTH_BACKEND_PATH = "/api/health"
 
-        JENKINS_EC2_HNS_APP_SERVER = 'jenkins-ssh-key-hns-server'
+        JENKINS_EC2_HNS_APP_SERVER = 'networkers-ec2-aws-ssh-access-key'
         
 
         // S3 bucket for your env files
-        S3_ENV_BUCKET = 'secure-env-files-itsoftlab'
+        S3_ENV_BUCKET = 'secure-env-files-networkers'
         // Backend keys
         BACKEND_PRODUCTION_ENV_S3_KEY = 'networkers-backend-production-env'
         BACKEND_STAGING_ENV_S3_KEY = 'networkers-backend-staging-env'

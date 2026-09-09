@@ -3,8 +3,8 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "ap-south-1"
-    BACKEND_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-backend-app"
-    FRONTEND_ECR_REPO: "615299768302.dkr.ecr.ap-south-1.amazonaws.com/networkers-frontend-app"
+    BACKEND_ECR_REPO: "410614794569.dkr.ecr.ap-south-1.amazonaws.com/networkers-backend-app"
+    FRONTEND_ECR_REPO: "410614794569.dkr.ecr.ap-south-1.amazonaws.com/networkers-frontend-app"
 
 phases:
   pre_build:
@@ -15,7 +15,7 @@ phases:
       - docker info
 
       - echo "🔹 Logging into AWS ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 615299768302.dkr.ecr.ap-south-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 410614794569.dkr.ecr.ap-south-1.amazonaws.com
 
   build:
     commands:

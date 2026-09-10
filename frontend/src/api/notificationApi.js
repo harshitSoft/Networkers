@@ -5,5 +5,7 @@ export const notificationApi = {
   page: (page = 0, size = 20) => api.get("/notifications", { params: { page, size } }).then(unwrap),
   unreadSummary: () => cachedRequest("notifications:unread", () => api.get("/notifications/unread-summary").then(unwrap), 15000),
   read: (id) => api.put(`/notifications/${id}/read`).then(unwrap).then((value) => { invalidateRequest("notifications:unread"); return value; }),
-  readAll: () => api.put("/notifications/read-all").then(unwrap).then((value) => { invalidateRequest("notifications:unread"); return value; })
+  readAll: () => api.put("/notifications/read-all").then(unwrap).then((value) => { invalidateRequest("notifications:unread"); return value; }),
+  pushConfig: () => api.get("/notifications/push/public-key").then(unwrap),
+  subscribePush: (payload) => api.post("/notifications/push/subscriptions", payload).then(unwrap)
 };

@@ -9,6 +9,7 @@ import LightboxModal from "../../components/gallery/LightboxModal.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 import { eventApi } from "../../api/eventApi";
 import { realGalleryItems } from "../../data/galleryItems.js";
+import { galleryApi } from "../../api/galleryApi.js";
 
 const tabs = [
   "All",
@@ -96,8 +97,10 @@ export default function GalleryPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedId, setSelectedId] = useState(null);
   const [apiItems, setApiItems] = useState([]);
+  const [managedItems, setManagedItems] = useState(fallbackItems);
 
   useEffect(() => {
+    galleryApi.all().then(slots=>setManagedItems(fallbackItems.map((item,index)=>({...item,image:slots?.[index]?.imageUrl||item.image})))).catch(()=>setManagedItems(fallbackItems));
     eventApi
       .all()
       .then((events) => {
@@ -109,7 +112,7 @@ export default function GalleryPage() {
       .catch(() => setApiItems([]));
   }, []);
 
-  const allItems = [...fallbackItems, ...apiItems];
+  const allItems = [...managedItems, ...apiItems];
   const filtered = useMemo(
     () =>
       active === "All"

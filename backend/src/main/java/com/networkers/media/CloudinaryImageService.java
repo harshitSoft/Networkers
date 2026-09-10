@@ -68,6 +68,26 @@ public class CloudinaryImageService {
         return secureUrl.toString();
     }
 
+    public String uploadGalleryImage(MultipartFile file, Integer slot) throws IOException {
+        if (cloudinary == null) throw new IllegalStateException("Image storage is not configured. Set the CLOUDINARY_URL environment variable.");
+        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderRoot + "/event-gallery", "public_id", "card-" + slot,
+                "overwrite", true, "invalidate", true, "resource_type", "image"));
+        Object secureUrl = result.get("secure_url");
+        if (secureUrl == null) throw new IllegalStateException("Cloudinary did not return an image URL");
+        return secureUrl.toString();
+    }
+
+    public String uploadBusinessLogo(MultipartFile file, Long profileId) throws IOException {
+        if (cloudinary == null) throw new IllegalStateException("Image storage is not configured. Set the CLOUDINARY_URL environment variable.");
+        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderRoot + "/business-logos", "public_id", "business-" + profileId,
+                "overwrite", true, "invalidate", true, "resource_type", "image"));
+        Object secureUrl = result.get("secure_url");
+        if (secureUrl == null) throw new IllegalStateException("Cloudinary did not return an image URL");
+        return secureUrl.toString();
+    }
+
     public void deleteCommunityMedia(String mediaUrl,String mediaType) throws IOException {
         if(cloudinary==null||mediaUrl==null||mediaUrl.isBlank())return;
         try{

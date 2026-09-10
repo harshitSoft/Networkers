@@ -56,7 +56,7 @@ public class AdminController {
         user.setPassword(encoder.encode(request.password()));
         User saved = users.save(user);
         if (joinRequest != null) { joinRequest.setStatus(JoinRequestStatus.ACCOUNT_CREATED); joinRequests.save(joinRequest); }
-        return ApiResponse.ok("User created successfully", AuthController.userDto(saved));
+        return ApiResponse.ok("Member created successfully", AuthController.userDto(saved));
     }
     @PostMapping("/users/{id}/send-credentials")
     public ApiResponse<?> sendCredentials(@PathVariable Long id, @RequestBody CredentialRequest request) {

@@ -228,7 +228,6 @@ export default function ManageChapters() {
                       {chapter.active ? "Active" : "Inactive"}
                     </span>
                   </div>
-                  {chapter.description && <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">{chapter.description}</p>}
                   <div className="mt-4 rounded-xl bg-gradient-to-r from-[#FFF1F2] to-white p-4 text-sm">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">

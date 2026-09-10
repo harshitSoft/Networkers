@@ -14,7 +14,7 @@ public interface BusinessProfileRepository extends JpaRepository<BusinessProfile
 
     @Query("""
             select b from BusinessProfile b where
-            (:keyword is null or lower(b.businessName) like lower(concat('%', :keyword, '%')) or lower(b.services) like lower(concat('%', :keyword, '%')) or lower(b.description) like lower(concat('%', :keyword, '%')))
+            (:keyword is null or lower(b.businessName) like lower(concat('%', :keyword, '%')) or lower(b.ownerName) like lower(concat('%', :keyword, '%')) or lower(b.user.fullName) like lower(concat('%', :keyword, '%')) or lower(b.services) like lower(concat('%', :keyword, '%')) or lower(b.description) like lower(concat('%', :keyword, '%')))
             and (:city is null or lower(b.city) = lower(:city))
             and (:category is null or lower(b.category) = lower(:category))
             and b.user.enabled = true

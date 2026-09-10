@@ -55,7 +55,7 @@ public class MeetingAutomationService {
         int round=groups.findByCycleIdOrderByRoundNumberAscGroupNumberAsc(cycle.getId()).stream().mapToInt(MeetingGroup::getRoundNumber).max().orElse(0)+1;List<List<User>> buckets=new ArrayList<>();
         Collections.shuffle(remaining);int bucketCount=(int)Math.ceil(remaining.size()/(double)MAX_GROUP_SIZE);for(int i=0;i<bucketCount;i++){List<User> bucket=new ArrayList<>();bucket.add(remaining.remove(0));buckets.add(bucket);}while(!remaining.isEmpty()){List<User> bucket=buckets.stream().filter(b->b.size()<MAX_GROUP_SIZE).min(Comparator.comparingInt(List::size)).orElseThrow();User best=remaining.stream().max(Comparator.comparingLong(candidate->bucket.stream().mapToLong(member->{String key=pairKey(member,candidate);return completed.contains(key)?-10000L:100L-attempts.getOrDefault(key,0)*10L;}).sum())).orElse(remaining.get(0));bucket.add(best);remaining.remove(best);}
         int global=groups.maxGroupNumber(cycle.getChapter().getId(),start.getYear(),start.getMonthValue());LocalDate end=start.plusDays(MAX_WINDOW_DAYS-1);
-        for(List<User> bucket:buckets){List<User[]> unmet=new ArrayList<>();for(int a=0;a<bucket.size();a++)for(int b=a+1;b<bucket.size();b++)if(!completed.contains(pairKey(bucket.get(a),bucket.get(b))))unmet.add(new User[]{bucket.get(a),bucket.get(b)});if(unmet.isEmpty())continue;MeetingGroup group=new MeetingGroup();group.setChapter(cycle.getChapter());group.setCycle(cycle);group.setRoundNumber(round);group.setYear(start.getYear());group.setMonth(start.getMonthValue());group.setGroupNumber(++global);group.setHost(bucket.get(0));group=groups.save(group);for(User member:bucket){MeetingParticipant participant=new MeetingParticipant();participant.setGroup(group);participant.setMember(member);participants.save(participant);}MonthlyMeeting meeting=new MonthlyMeeting();meeting.setGroup(group);meeting.setScheduledDate(start);meeting.setEndDate(end);meeting.setScheduledTime(DEFAULT_TIME);meeting=meetings.save(meeting);for(User[] assignment:unmet){PairMeeting pair=new PairMeeting();pair.setMeeting(meeting);pair.setMemberOne(assignment[0]);pair.setMemberTwo(assignment[1]);pairs.save(pair);}for(User member:bucket)notifications.notify(member,"New face-to-face round","Cycle "+cycle.getCycleNumber()+", round "+round+" runs from "+start+" to "+end+". Complete your assigned one-to-one meetings within 10 days.");}
+        for(List<User> bucket:buckets){List<User[]> unmet=new ArrayList<>();for(int a=0;a<bucket.size();a++)for(int b=a+1;b<bucket.size();b++)if(!completed.contains(pairKey(bucket.get(a),bucket.get(b))))unmet.add(new User[]{bucket.get(a),bucket.get(b)});if(unmet.isEmpty())continue;MeetingGroup group=new MeetingGroup();group.setChapter(cycle.getChapter());group.setCycle(cycle);group.setRoundNumber(round);group.setYear(start.getYear());group.setMonth(start.getMonthValue());group.setGroupNumber(++global);group.setHost(bucket.get(0));group=groups.save(group);for(User member:bucket){MeetingParticipant participant=new MeetingParticipant();participant.setGroup(group);participant.setMember(member);participants.save(participant);}MonthlyMeeting meeting=new MonthlyMeeting();meeting.setGroup(group);meeting.setScheduledDate(start);meeting.setEndDate(end);meeting.setScheduledTime(DEFAULT_TIME);meeting=meetings.save(meeting);for(User[] assignment:unmet){PairMeeting pair=new PairMeeting();pair.setMeeting(meeting);pair.setMemberOne(assignment[0]);pair.setMemberTwo(assignment[1]);pairs.save(pair);}for(User member:bucket)notifications.notify(member,"New face-to-face round","Cycle "+cycle.getCycleNumber()+", round "+round+" runs from "+start+" to "+end+". Complete your assigned face-to-face meetings within 10 days.");}
     }
     private List<User> activeMembers(Chapter chapter){return new ArrayList<>(users.findByChapterAndEnabledTrueAndDeletedFalseOrderByFullNameAsc(chapter));}
     private String pairKey(User a,User b){return Math.min(a.getId(),b.getId())+":"+Math.max(a.getId(),b.getId());}
@@ -77,7 +77,7 @@ public class MeetingAutomationService {
         LocalDate reminderDate=LocalDate.now(ZoneId.of("Asia/Kolkata")).plusDays(2);
         for(MonthlyMeeting m:meetings.findByScheduledDateAndReminderSentFalse(reminderDate)){
             for(MeetingParticipant p:participants.findByGroupIdOrderByMemberFullNameAsc(m.getGroup().getId()))
-                notifications.notify(p.getMember(),"Be ready for your upcoming meeting","Your Group "+m.getGroup().getGroupNumber()+" one-to-one meeting window begins in 2 days and runs from "+m.getScheduledDate()+" to "+effectiveEnd(m)+". Please connect with your partners and be prepared.");
+                notifications.notify(p.getMember(),"Be ready for your upcoming meeting","Your Group "+m.getGroup().getGroupNumber()+" face-to-face meeting window begins in 2 days and runs from "+m.getScheduledDate()+" to "+effectiveEnd(m)+". Please connect with your partners and be prepared.");
             m.setReminderSent(true);meetings.save(m);
         }
     }
@@ -112,7 +112,7 @@ public class MeetingAutomationService {
             for(User u:bucket){MeetingParticipant p=new MeetingParticipant();p.setGroup(g);p.setMember(u);participants.save(p);}
             MonthlyMeeting m=new MonthlyMeeting();m.setGroup(g);m.setScheduledDate(suggestedStart);m.setEndDate(suggestedEnd);m.setScheduledTime(DEFAULT_TIME);m=meetings.save(m);
             for(int a=0;a<bucket.size();a++)for(int b=a+1;b<bucket.size();b++){PairMeeting pair=new PairMeeting();pair.setMeeting(m);pair.setMemberOne(bucket.get(a));pair.setMemberTwo(bucket.get(b));pairs.save(pair);}
-            for(User u:bucket)notifications.notify(u,"New monthly one-to-one group","Group "+(i+1)+" has "+bucket.size()+" members. "+host.getFullName()+" is the host and will confirm the meeting window.");
+            for(User u:bucket)notifications.notify(u,"New monthly face-to-face group","Group "+(i+1)+" has "+bucket.size()+" members. "+host.getFullName()+" is the host and will confirm the meeting window.");
         }
     }
 
@@ -140,7 +140,7 @@ public class MeetingAutomationService {
         if(r.status()!=null){
             if(!admin&&LocalDate.now(ZoneId.of("Asia/Kolkata")).isBefore(end.plusDays(1))){
                 List<PairMeeting> all=pairs.findByMeetingIdOrderByIdAsc(m.getId());
-                if(all.stream().anyMatch(p->!p.isCompleted()))throw new IllegalStateException("The host can submit early only after every one-to-one meeting is complete");
+                if(all.stream().anyMatch(p->!p.isCompleted()))throw new IllegalStateException("The host can submit early only after every face-to-face meeting is complete");
             }
             int percentage=percentage(m);m.setStatus(percentage==100?AutomatedMeetingStatus.COMPLETED:AutomatedMeetingStatus.INCOMPLETE);
         }
@@ -151,10 +151,10 @@ public class MeetingAutomationService {
 
     @Transactional
     public PairView completePair(Long meetingId,Long pairId,User actor,LocalDate metOn,String notes,MultipartFile photo) throws IOException {
-        MonthlyMeeting m=find(meetingId);PairMeeting pair=pairs.findById(pairId).orElseThrow(()->new EntityNotFoundException("One-to-one meeting not found"));
-        if(!pair.getMeeting().getId().equals(meetingId))throw new IllegalArgumentException("One-to-one meeting does not belong to this monthly group");
+        MonthlyMeeting m=find(meetingId);PairMeeting pair=pairs.findById(pairId).orElseThrow(()->new EntityNotFoundException("Face-to-face meeting not found"));
+        if(!pair.getMeeting().getId().equals(meetingId))throw new IllegalArgumentException("Face-to-face meeting does not belong to this monthly group");
         if(!isPairMember(pair,actor))throw new SecurityException("Only the two assigned members can update this meeting");
-        if(pair.isCompleted())throw new IllegalStateException("This one-to-one meeting has already been completed");
+        if(pair.isCompleted())throw new IllegalStateException("This face-to-face meeting has already been completed");
         if(notes==null||notes.isBlank())throw new IllegalArgumentException("Meeting description is required");
         if(photo==null||photo.isEmpty())throw new IllegalArgumentException("Meeting photo is required");
         if(metOn==null||metOn.isBefore(m.getScheduledDate())||metOn.isAfter(effectiveEnd(m)))throw new IllegalArgumentException("Meeting date must be inside the group meeting window");
@@ -164,7 +164,7 @@ public class MeetingAutomationService {
         pair.setMetOn(metOn);pair.setNotes(notes==null?null:notes.trim());pair.setPhotoUrl(photoUrl);pair.setCompletedBy(actor);pair.setCompletedAt(LocalDateTime.now());
         PairMeeting saved=pairs.save(pair);User other=pair.getMemberOne().getId().equals(actor.getId())?pair.getMemberTwo():pair.getMemberOne();
         com.networkers.community.Post story=new com.networkers.community.Post();story.setUser(actor);story.setType(com.networkers.community.PostType.MEETING_MOMENT);story.setTitle("Face-to-Face meeting completed");story.setContent(notes.trim());story.setMeeting(m);story.setMediaType("IMAGE");story.setMediaUrl(photoUrl);story.getMentions().add(pair.getMemberOne());story.getMentions().add(pair.getMemberTwo());posts.save(story);
-        notifications.notify(other,"One-to-one meeting completed",actor.getFullName()+" recorded your meeting on "+metOn+".");
+        notifications.notify(other,"Face-to-face meeting completed",actor.getFullName()+" recorded your meeting on "+metOn+".");
         if(m.getGroup().getCycle()!=null)evaluateCycle(m.getGroup().getCycle());
         return pairView(saved,actor);
     }

@@ -42,6 +42,9 @@ import ReferralAnalytics from "../pages/admin/ReferralAnalytics.jsx";
 import ManageMonthlyMeetings from "../pages/admin/ManageMonthlyMeetings.jsx";
 import ManageVisitors from "../pages/admin/ManageVisitors.jsx";
 import VisitorDetails from "../pages/admin/VisitorDetails.jsx";
+import ManageGallery from "../pages/admin/ManageGallery.jsx";
+import UserControl from "../pages/admin/UserControl.jsx";
+import EventFees from "../pages/admin/EventFees.jsx";
 
 export default function AppRoutes() {
   return (
@@ -61,6 +64,7 @@ export default function AppRoutes() {
           <Route path="/public-dashboard" element={<PublicDashboard />} />
           <Route path="/business/profile" element={<BusinessProfile />} />
           <Route path="/business/directory" element={<BusinessDirectory />} />
+          <Route path="/business/profiles" element={<BusinessDirectory />} />
           <Route path="/businesses" element={<BusinessDirectory />} />
           <Route path="/business/:id" element={<BusinessDetails />} />
           <Route path="/businesses/:id" element={<BusinessDetails />} />
@@ -87,8 +91,12 @@ export default function AppRoutes() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<ManageUsers />} />
           <Route path="/admin/users/create" element={<CreateUser />} />
+          <Route path="/admin/members/create" element={<CreateUser />} />
+          <Route path="/admin/gallery" element={<ManageGallery />} />
+          <Route path="/admin/user-control" element={<UserControl />} />
           <Route path="/admin/chapters" element={<ManageChapters />} />
           <Route path="/admin/events" element={<ManageEvents />} />
+          <Route path="/admin/event-fees" element={<EventFees />} />
           <Route path="/admin/businesses" element={<ManageBusinesses />} />
           <Route path="/admin/meetups" element={<ManageMeetups />} />
           <Route path="/admin/meetups/:id" element={<EditMeetup />} />

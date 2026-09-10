@@ -1,0 +1,2 @@
+import api,{unwrap} from "./axios";
+export const eventFeeApi={all:(year,month)=>api.get("/admin/event-fees",{params:{year,month}}).then(unwrap),status:(id,status)=>api.put(`/admin/event-fees/${id}/status`,{status}).then(unwrap),remind:id=>api.post(`/admin/event-fees/${id}/remind`).then(unwrap),remindUnpaid:(year,month)=>api.post("/admin/event-fees/remind-unpaid",null,{params:{year,month}}).then(unwrap)};

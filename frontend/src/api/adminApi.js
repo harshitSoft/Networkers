@@ -14,5 +14,8 @@ export const adminApi = {
   analytics: () => api.get("/admin/analytics").then(unwrap),
   joinRequests: () => api.get("/admin/join-requests").then(unwrap).then((items) => Array.isArray(items) ? items.filter((item) => item.status === "PENDING" || item.status === "ACCEPTED") : []),
   acceptJoinRequest: (id) => api.put(`/admin/join-requests/${id}/accept`).then(unwrap),
-  rejectJoinRequest: (id) => api.put(`/admin/join-requests/${id}/reject`).then(unwrap)
+  rejectJoinRequest: (id) => api.put(`/admin/join-requests/${id}/reject`).then(unwrap),
+  communityPosts: () => api.get("/admin/community-posts").then(unwrap),
+  postReports: () => api.get("/admin/post-reports").then(unwrap),
+  deletePost: (id) => api.delete(`/admin/community-posts/${id}`).then(unwrap)
 };

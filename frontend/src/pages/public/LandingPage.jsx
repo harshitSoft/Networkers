@@ -134,18 +134,11 @@ export default function LandingPage() {
                         </div>
                         <span className="status-pill self-start">Active</span>
                       </div>
-                      {chapter.description && <p className="mt-4 line-clamp-2 text-[#888]">{chapter.description}</p>}
-                      <div className="mt-5 flex justify-between text-sm">
-                        <span className="flex gap-2">
-                          <Users size={17} className="text-red-500" />
-                          {chapter.memberCount} members
-                        </span>
-                      </div>
                       <Link
                         to={`/join?chapter=${chapter.id}`}
                         className="glow-button glow-button-primary mt-auto !mt-6 w-full"
                       >
-                        Join this chapter
+                        Request to join chapter
                       </Link>
                       </div>
                     </GlowCard>

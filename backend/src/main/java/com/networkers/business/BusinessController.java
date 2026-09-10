@@ -6,6 +6,9 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.networkers.media.CloudinaryImageService;
+import java.io.IOException;
 
 import java.util.List;
 
@@ -13,9 +16,11 @@ import java.util.List;
 @RequestMapping("/api/business")
 public class BusinessController {
     private final BusinessProfileRepository businesses;
+    private final CloudinaryImageService media;
 
-    public BusinessController(BusinessProfileRepository businesses) {
+    public BusinessController(BusinessProfileRepository businesses, CloudinaryImageService media) {
         this.businesses = businesses;
+        this.media = media;
     }
 
     @PostMapping("/profile")
@@ -35,6 +40,14 @@ public class BusinessController {
     @GetMapping("/my-profile")
     public ApiResponse<BusinessProfile> myProfile() {
         return ApiResponse.ok("My profile", businesses.findByUser(CurrentUser.get()).orElse(null));
+    }
+
+    @PutMapping(value="/profile/logo", consumes="multipart/form-data")
+    public ApiResponse<BusinessProfile> uploadLogo(@RequestPart MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty() || file.getContentType() == null || !file.getContentType().startsWith("image/")) throw new IllegalArgumentException("Choose a valid image file");
+        BusinessProfile profile = businesses.findByUser(CurrentUser.get()).orElseThrow(() -> new EntityNotFoundException("Create your business profile before uploading its image"));
+        profile.setLogoUrl(media.uploadBusinessLogo(file, profile.getId()));
+        return ApiResponse.ok("Business image uploaded", businesses.save(profile));
     }
 
     @GetMapping("/all")

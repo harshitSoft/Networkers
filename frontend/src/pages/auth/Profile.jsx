@@ -1,10 +1,12 @@
 import {
   Briefcase,
+  ImagePlus,
   KeyRound,
   Save,
   UserCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
@@ -29,8 +31,9 @@ const emptyBusiness = {
   logoUrl: "",
 };
 export default function Profile() {
+  const [searchParams] = useSearchParams();
   const { user, updateCurrentUser } = useAuth();
-  const [tab, setTab] = useState("personal");
+  const [tab, setTab] = useState(searchParams.get("tab") === "business" ? "business" : "personal");
   const [personal, setPersonal] = useState({
     fullName: user.fullName || "",
     email: user.email || "",
@@ -46,6 +49,7 @@ export default function Profile() {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [business, setBusiness] = useState(emptyBusiness);
   const [hasBusiness, setHasBusiness] = useState(false);
+  const [businessImage, setBusinessImage] = useState(null);
   useEffect(() => {
     businessApi
       .my()
@@ -116,13 +120,15 @@ export default function Profile() {
       const saved = hasBusiness
         ? await businessApi.update(payload)
         : await businessApi.create(payload);
+      const completed = businessImage ? await businessApi.uploadLogo(businessImage) : saved;
       setBusiness({
         ...emptyBusiness,
-        ...saved,
-        foundedYear: saved.foundedYear || "",
+        ...completed,
+        foundedYear: completed.foundedYear || "",
       });
       setHasBusiness(true);
-      toast.success("Business profile saved");
+      setBusinessImage(null);
+      toast.success("Business card saved");
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Could not save business profile",
@@ -290,9 +296,10 @@ export default function Profile() {
               onBlur={key === "website" ? () => setBusiness((current) => ({ ...current, website: normalizeWebsite(current.website) })) : undefined}
             />
           ))}
+          <label className="rounded-2xl border border-dashed border-red-500/35 p-4 md:col-span-2"><span className="flex items-center gap-2 text-sm font-bold"><ImagePlus size={18} className="text-red-500"/>Business card image <span className="font-normal text-brand-muted">(optional)</span></span><input className="field mt-3" type="file" accept="image/*" onChange={e=>setBusinessImage(e.target.files?.[0]||null)}/>{(businessImage||business.logoUrl)&&<div className="mt-3 flex items-center gap-3"><img className="h-16 w-16 rounded-full border-2 border-red-500/40 object-cover" src={businessImage?URL.createObjectURL(businessImage):business.logoUrl} alt="Business card preview"/><span className="text-sm text-brand-muted">This image appears at the top of your business card.</span></div>}</label>
           <button className="btn-primary mt-2 md:col-span-2">
             <Save size={17} />
-            {hasBusiness ? "Update" : "Create"} business profile
+            {hasBusiness ? "Update" : "Create"} business card
           </button>
         </ProfileForm>
       )}

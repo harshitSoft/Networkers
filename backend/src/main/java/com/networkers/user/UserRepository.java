@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRole(Role role);
     long countByRoleAndDeletedFalse(Role role);
     List<User> findByDeletedFalseOrderByCreatedAtDesc();
+    @Query("select u from User u where u.deleted = false and u.role in (com.networkers.user.Role.USER, com.networkers.user.Role.BUSINESS_USER) order by u.fullName asc")
+    List<User> findAllBillableMembers();
     List<User> findByChapterAndDeletedFalseOrderByFullNameAsc(Chapter chapter);
     List<User> findByChapterAndEnabledTrueAndDeletedFalseOrderByFullNameAsc(Chapter chapter);
     long countByChapterAndDeletedFalse(Chapter chapter);

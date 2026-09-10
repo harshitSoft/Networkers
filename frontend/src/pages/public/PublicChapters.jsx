@@ -6,11 +6,6 @@ import PublicNavbar from "./PublicNavbar.jsx";
 import LandingFooter from "../../components/landing/LandingFooter.jsx";
 import GlowCard from "../../components/ui/GlowCard.jsx";
 import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
-const banners = [
-  "photo-1521737604893-d14cc237f11d",
-  "photo-1556761175-b413da4baf72",
-  "photo-1552664730-d307ca884978",
-];
 export default function PublicChapters() {
   const [chapters, setChapters] = useState([]);
   const [query, setQuery] = useState("");
@@ -69,13 +64,6 @@ export default function PublicChapters() {
               <ScrollReveal className="h-full" delay={i * 50} key={chapter.id}>
                 <GlowCard className="h-full">
                   <div className="flex h-full flex-col">
-                  <div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0">
-                    <img
-                      className="h-full w-full object-cover"
-                      src={`https://images.unsplash.com/${banners[i % banners.length]}?auto=format&fit=crop&w=800&q=80`}
-                      alt={chapter.chapterName}
-                    />
-                  </div>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-data text-xs text-red-400">
@@ -86,13 +74,6 @@ export default function PublicChapters() {
                       </h2>
                     </div>
                     <span className="status-pill">Active</span>
-                  </div>
-                  {chapter.description && <p className="mt-4 line-clamp-3 leading-7 text-[#888]">{chapter.description}</p>}
-                  <div className="mt-5 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <Users size={16} className="text-red-500" />
-                      {chapter.memberCount} members
-                    </span>
                   </div>
                   <Link
                     to={`/join?chapter=${chapter.id}`}

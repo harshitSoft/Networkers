@@ -7,4 +7,5 @@ export const communityApi = {
   remove: (id) => api.delete(`/community/posts/${id}`).then(unwrap),
   kudos: (id) => api.post(`/community/posts/${id}/kudos`).then(unwrap),
   comment: (id, content) => api.post(`/community/posts/${id}/comments`, { content }).then(unwrap),
+  report: (id, reason) => api.post(`/community/posts/${id}/reports`, { reason }).then(unwrap),
 };

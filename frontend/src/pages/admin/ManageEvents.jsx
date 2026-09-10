@@ -156,7 +156,7 @@ export default function ManageEvents() {
             </div>
           </section>
 
-          <label className="block text-sm font-bold">Description
+          <label className="block text-sm font-bold">Description <span className="font-normal text-brand-muted">(optional)</span>
             <textarea className="field mt-2" rows="4" placeholder="Describe the event, agenda, or any instructions" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}/>
           </label>
           <div className="flex justify-end border-t border-brand-border/15 pt-5">

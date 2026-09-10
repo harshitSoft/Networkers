@@ -51,7 +51,6 @@ export default function UserChapters() {
               </div>
               <h3 className="mt-3 font-serif text-3xl font-black leading-tight tracking-tight text-slate-950">{chapter.chapterName}</h3>
               {chapter.location && <p className="mt-1 text-sm text-slate-500">{chapter.location}</p>}
-              {chapter.description && <p className="mt-3 text-sm leading-6 text-slate-600">{chapter.description}</p>}
               <div className="mt-4 space-y-1 text-sm font-semibold">
                 <p>{chapter.memberCount} members</p>
               </div>

@@ -35,6 +35,7 @@ public class UserDeletionService {
         execute("delete from monthly_meeting_groups where host_id=:id", id);
 
         // Remove the member's remaining community activity and references to their name.
+        execute("delete from post_report where reporter_id=:id or post_id in (select id from post where user_id=:id)", id);
         execute("delete from comment where user_id=:id or post_id in (select id from post where user_id=:id)", id);
         execute("delete from post_mentions where user_id=:id or post_id in (select id from post where user_id=:id)", id);
         execute("delete from post_kudos where user_id=:id or post_id in (select id from post where user_id=:id)", id);
@@ -45,6 +46,8 @@ public class UserDeletionService {
         execute("delete from monthly_meeting_participants where member_id=:id", id);
         execute("delete from event_rsvps where user_id=:id", id);
         execute("delete from notification where user_id=:id", id);
+        execute("delete from push_subscription where user_id=:id", id);
+        execute("delete from event_fee where user_id=:id", id);
         execute("delete from password_otp where user_id=:id", id);
         execute("delete from business_profile where user_id=:id", id);
         execute("delete from opportunity where posted_by_id=:id", id);

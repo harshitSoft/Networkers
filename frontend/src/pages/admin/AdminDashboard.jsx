@@ -19,6 +19,7 @@ const baseForm = {
   fullName: "",
   email: "",
   mobile: "",
+  dateOfBirth: "",
   password: "",
   role: "USER",
   businessName: "",
@@ -235,7 +236,7 @@ function AccountModal({ request, onClose, onCreated }) {
         chapterId: form.chapterId ? Number(form.chapterId) : null,
       });
       setCreated({ user, password: form.password });
-      toast.success("User created successfully");
+      toast.success("Member created successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not create account");
     } finally {
@@ -266,7 +267,7 @@ function AccountModal({ request, onClose, onCreated }) {
         <div className="flex items-start justify-between">
           <div>
             <p className="page-kicker">Approved request</p>
-            <h2 className="mt-1 text-3xl font-black">Create user account</h2>
+            <h2 className="mt-1 text-3xl font-black">Create member account</h2>
             <p className="mt-2 text-sm text-slate-400">
               Create the account first. Send login credentials separately after
               creation.
@@ -287,6 +288,7 @@ function AccountModal({ request, onClose, onCreated }) {
                 ["fullName", "Full name", "text"],
                 ["email", "Email", "email"],
                 ["mobile", "Mobile", "tel"],
+                ["dateOfBirth", "Date of birth", "date"],
                 ["businessName", "Business name", "text"],
                 ["businessCategory", "Business category", "text"],
                 ["services", "Services", "text"],
@@ -302,7 +304,7 @@ function AccountModal({ request, onClose, onCreated }) {
                   <input
                     name={key}
                     className="field"
-                    required={["fullName", "email", "mobile"].includes(key)}
+                    required={["fullName", "email", "mobile", "dateOfBirth"].includes(key)}
                     type={type}
                     value={form[key]}
                     onChange={({ currentTarget: { value } }) =>
@@ -365,7 +367,7 @@ function AccountModal({ request, onClose, onCreated }) {
             </div>
             <button disabled={loading} className="btn-primary mt-6">
               {loading && <span className="spinner" />}
-              {loading ? "Creating user..." : "Create user"}
+              {loading ? "Creating member..." : "Create member"}
             </button>
           </>
         )}

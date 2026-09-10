@@ -37,8 +37,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/password/forgot/**").permitAll()
                         .requestMatchers("/health", "/api/health", "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/join-requests").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/chapters", "/api/chapters/**", "/api/events", "/api/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chapters", "/api/chapters/**", "/api/events", "/api/events/**", "/api/gallery").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/meetups").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/gallery/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .requestMatchers("/api/admin/**", "/api/meetups/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

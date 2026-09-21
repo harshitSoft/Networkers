@@ -1,6 +1,7 @@
 package com.networkers.auth;
 
 import com.networkers.common.ApiResponse;
+import com.networkers.admin.UserDeletionService;
 import com.networkers.security.CurrentUser;
 import com.networkers.security.JwtService;
 import com.networkers.user.Role;
@@ -28,14 +29,16 @@ public class AuthController {
     private final JwtService jwtService;
     private final CloudinaryImageService images;
     private final PasswordOtpService passwordOtps;
+    private final UserDeletionService userDeletionService;
 
-    public AuthController(UserRepository users, PasswordEncoder encoder, AuthenticationManager authenticationManager, JwtService jwtService, CloudinaryImageService images, PasswordOtpService passwordOtps) {
+    public AuthController(UserRepository users, PasswordEncoder encoder, AuthenticationManager authenticationManager, JwtService jwtService, CloudinaryImageService images, PasswordOtpService passwordOtps, UserDeletionService userDeletionService) {
         this.users = users;
         this.encoder = encoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.images = images;
         this.passwordOtps = passwordOtps;
+        this.userDeletionService = userDeletionService;
     }
 
     @PostMapping("/register")
@@ -131,6 +134,19 @@ public class AuthController {
         return ApiResponse.ok("Profile image updated", userDto(users.save(user)));
     }
 
+    @DeleteMapping("/account")
+    public ApiResponse<Boolean> deleteOwnAccount(@Valid @RequestBody DeleteAccountRequest request) {
+        User user = CurrentUser.get();
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.SUPER_ADMIN) {
+            throw new IllegalStateException("Admin accounts are protected and cannot be self-deleted");
+        }
+        if (!encoder.matches(request.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        userDeletionService.permanentlyDelete(user);
+        return ApiResponse.ok("Your account and related data have been permanently deleted", true);
+    }
+
     private Map<String, Object> authPayload(User user) {
         return Map.of("token", jwtService.generate(user.getEmail()), "user", userDto(user));
     }
@@ -174,4 +190,5 @@ public class AuthController {
     public record ConfirmPasswordOtpRequest(@NotBlank String otp, @NotBlank String newPassword) {}
     public record ForgotPasswordRequest(@Email @NotBlank String email) {}
     public record ResetPasswordRequest(@Email @NotBlank String email, @NotBlank String otp, @NotBlank String newPassword) {}
+    public record DeleteAccountRequest(@NotBlank String password) {}
 }

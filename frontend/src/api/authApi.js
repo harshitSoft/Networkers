@@ -10,6 +10,8 @@ export const authApi = {
     data.append("file", file);
     return api.post("/auth/profile/image", data).then(unwrap);
   },
+  deleteAccount: (password) =>
+    api.delete("/auth/account", { data: { password } }).then(unwrap),
   changePassword: (payload) =>
     api.put("/auth/change-password", payload).then(unwrap),
   requestPasswordChangeOtp: () =>

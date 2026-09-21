@@ -3,10 +3,11 @@ import {
   ImagePlus,
   KeyRound,
   Save,
+  Trash2,
   UserCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authApi } from "../../api/authApi";
@@ -32,7 +33,8 @@ const emptyBusiness = {
 };
 export default function Profile() {
   const [searchParams] = useSearchParams();
-  const { user, updateCurrentUser } = useAuth();
+  const navigate = useNavigate();
+  const { user, updateCurrentUser, logout } = useAuth();
   const [tab, setTab] = useState(searchParams.get("tab") === "business" ? "business" : "personal");
   const [personal, setPersonal] = useState({
     fullName: user.fullName || "",
@@ -50,6 +52,9 @@ export default function Profile() {
   const [business, setBusiness] = useState(emptyBusiness);
   const [hasBusiness, setHasBusiness] = useState(false);
   const [businessImage, setBusinessImage] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     businessApi
       .my()
@@ -133,6 +138,22 @@ export default function Profile() {
       toast.error(
         error.response?.data?.message || "Could not save business profile",
       );
+    }
+  }
+  async function deleteAccount(e) {
+    e.preventDefault();
+    setDeleting(true);
+    try {
+      await authApi.deleteAccount(deletePassword);
+      localStorage.removeItem("networkers_token");
+      localStorage.removeItem("networkers_user");
+      await logout();
+      toast.success("Your account has been permanently deleted");
+      navigate("/", { replace: true });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not delete account");
+    } finally {
+      setDeleting(false);
     }
   }
   return (
@@ -302,6 +323,35 @@ export default function Profile() {
             {hasBusiness ? "Update" : "Create"} business card
           </button>
         </ProfileForm>
+      )}
+      {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+        <section className="card max-w-3xl border-red-500/30 p-6">
+          <h3 className="text-xl font-black text-red-400">Delete account</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Permanently delete your account, profile, and related activity. This action cannot be undone.
+          </p>
+          <button type="button" onClick={() => setDeleteOpen(true)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-500/50 px-4 py-2 text-sm font-bold text-red-400 transition hover:bg-red-500/10">
+            <Trash2 size={17} /> Delete my account
+          </button>
+        </section>
+      )}
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+          <form onSubmit={deleteAccount} className="theme-dialog w-full max-w-md rounded-2xl border border-red-500/40 p-6 shadow-2xl">
+            <Trash2 className="text-red-500" size={30} />
+            <h2 id="delete-account-title" className="mt-3 text-2xl font-black">Delete your account?</h2>
+            <p className="mt-2 text-sm leading-6 text-brand-muted">All of your account data will be permanently removed. Enter your current password to confirm.</p>
+            <div className="mt-5">
+              <Field label="Current password" type="password" required value={deletePassword} onChange={setDeletePassword} />
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={deleting} className="btn-muted justify-center" onClick={() => { setDeleteOpen(false); setDeletePassword(""); }}>Cancel</button>
+              <button disabled={deleting || !deletePassword} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+                <Trash2 size={17} /> {deleting ? "Deleting account..." : "Permanently delete"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

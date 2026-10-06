@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Ban, Check, Pencil, Search, Trash2, X } from "lucide-react";
+import { Ban, Check, Download, Pencil, Search, Trash2, X } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import EmptyState from "../../components/EmptyState.jsx";
 import { chapterApi } from "../../api/chapterApi";
@@ -14,6 +14,7 @@ export default function ManageUsers() {
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(1);
   const [chapters, setChapters] = useState([]);
   const load = () => adminApi.users().then((data) => setItems(Array.isArray(data) ? data : [])).catch(() => setItems([]));
@@ -30,6 +31,28 @@ export default function ManageUsers() {
     await (u.enabled ? adminApi.block(u.id) : adminApi.unblock(u.id));
     toast.success(u.enabled ? "User deactivated" : "User activated");
     load();
+  }
+  async function exportMembers() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const response = await adminApi.exportUsers();
+      const disposition = response.headers?.["content-disposition"] || "";
+      const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] || `networkers-members-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Member Excel file downloaded");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not export members");
+    } finally {
+      setExporting(false);
+    }
   }
   async function confirmDelete() {
     if (!deleteTarget || deleting) return;
@@ -66,9 +89,14 @@ export default function ManageUsers() {
           <h2 className="mt-1 page-title">Users</h2>
           <p className="mt-1 text-sm text-slate-500">Manage member accounts, status, chapter assignment, and business profile data.</p>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted transition-colors peer-focus:text-brand-accent" size={17} />
-          <input className="field peer !pl-10" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <div className="mt-4 flex w-full flex-col gap-2 sm:flex-row md:mt-0 md:w-auto">
+          <button type="button" className="btn-primary whitespace-nowrap" onClick={exportMembers} disabled={exporting}>
+            <Download size={17} />{exporting ? "Exporting..." : "Export Excel"}
+          </button>
+          <div className="relative w-full md:w-80">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted transition-colors peer-focus:text-brand-accent" size={17} />
+            <input className="field peer !pl-10" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </div>
         </div>
       </div>
       <AdminTable title="User Directory" items={visible} render={(u) => (

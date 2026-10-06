@@ -4,13 +4,18 @@ import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class AccountMailService {
+    private static final Logger log = LoggerFactory.getLogger(AccountMailService.class);
     private final JavaMailSender sender;
     @Value("${app.mail.from}") private String from;
+    @Value("${spring.mail.username:}") private String username;
     public AccountMailService(JavaMailSender sender){this.sender=sender;}
     public void sendApproval(String name,String email,String password){
         try{
@@ -31,9 +36,44 @@ public class AccountMailService {
         """.formatted(title,name,description==null||description.isBlank()?"A new networking event has been created for you.":description,date,time,venue==null||venue.isBlank()?"To be announced":venue,chapter),true);sender.send(message);}catch(Exception e){throw new IllegalStateException("Could not send event invitation",e);}
     }
     public void sendPasswordOtp(String name,String email,String otp,String action){
+        if (username == null || username.isBlank() || from == null || from.isBlank() || from.endsWith("networkers.local")) {
+            throw new IllegalStateException("Password email is not configured. Set MAIL_USERNAME, MAIL_PASSWORD, and MAIL_FROM (or the SPRING_MAIL_* equivalents).");
+        }
         try{MimeMessage message=sender.createMimeMessage();MimeMessageHelper helper=new MimeMessageHelper(message,true,"UTF-8");helper.setFrom(from,"Networkers Security");helper.setTo(email);helper.setSubject("Your Networkers password OTP");helper.setText("""
-        <html><body style='margin:0;background:#0A0A0A;font-family:Arial;color:#F7F7F7;padding:30px'><div style='max-width:600px;margin:auto;background:#111;border:1px solid #8B0000;border-radius:18px;overflow:hidden'><div style='padding:22px 28px;background:#000;text-align:center'><img src='https://networkers.family/brand/networkers-email-logo.png' alt='Networkers' width='360' style='display:block;max-width:100%;height:auto;margin:auto'></div><div style='padding:32px'><p style='color:#FF4D4D;font-weight:bold'>PASSWORD SECURITY</p><h2>Hello, %s</h2><p style='color:#B3B3B3;line-height:1.7'>Use this one-time password to %s. It expires in 10 minutes.</p><div style='background:#0A0A0A;border:1px solid #E10600;padding:20px;margin:24px 0;text-align:center;border-radius:10px;font-size:32px;font-weight:bold;letter-spacing:8px;color:#FF4D4D'>%s</div><p style='color:#888;font-size:13px'>If you did not request this, you can safely ignore this email. Never share this OTP with anyone.</p></div></div></body></html>
-        """.formatted(name==null||name.isBlank()?"Member":name,action,otp),true);sender.send(message);}catch(Exception e){throw new IllegalStateException("Could not send password OTP",e);}
+        <html><body style='margin:0;background:#0A0A0A;font-family:Arial;color:#F7F7F7;padding:30px'><div style='max-width:600px;margin:auto;background:#111;border:1px solid #8B0000;border-radius:18px;overflow:hidden'><div style='padding:22px 28px;background:#000;text-align:center'><img src='https://networkers.family/brand/networkers-email-logo.png' alt='Networkers' width='360' style='display:block;max-width:100%%;height:auto;margin:auto'></div><div style='padding:32px'><p style='color:#FF4D4D;font-weight:bold'>PASSWORD SECURITY</p><h2>Hello, %s</h2><p style='color:#B3B3B3;line-height:1.7'>Use this one-time password to %s. It expires in 10 minutes.</p><div style='background:#0A0A0A;border:1px solid #E10600;padding:20px;margin:24px 0;text-align:center;border-radius:10px;font-size:32px;font-weight:bold;letter-spacing:8px;color:#FF4D4D'>%s</div><p style='color:#888;font-size:13px'>If you did not request this, you can safely ignore this email. Never share this OTP with anyone.</p></div></div></body></html>
+        """.formatted(name==null||name.isBlank()?"Member":name,action,otp),true);sender.send(message);}catch(Exception e){
+            String reason = safeMailFailure(e);
+            log.error("Password OTP email delivery failed ({}): {}", e.getClass().getSimpleName(), reason);
+            throw new IllegalStateException("Could not send password OTP: " + reason, e);
+        }
+    }
+    private String safeMailFailure(Exception error) {
+        if (error instanceof java.util.UnknownFormatConversionException ||
+                error instanceof java.util.MissingFormatArgumentException ||
+                error instanceof java.util.IllegalFormatException) {
+            return "The password email template contains an invalid format sequence. Restart the backend to load the corrected template.";
+        }
+        Throwable cause = error;
+        while (cause.getCause() != null && cause.getCause() != cause &&
+                !(cause instanceof jakarta.mail.MessagingException) &&
+                !(cause instanceof java.net.UnknownHostException) &&
+                !(cause instanceof java.net.ConnectException) &&
+                !(cause instanceof java.net.SocketTimeoutException)) cause = cause.getCause();
+        String message = cause.getMessage();
+        if (cause instanceof jakarta.mail.AuthenticationFailedException ||
+                (message != null && message.toLowerCase().contains("authentication"))) {
+            return "SMTP authentication failed. Check the Gmail address and use a current 16-character Google App Password without spaces.";
+        }
+        if (cause instanceof java.net.UnknownHostException) {
+            return "The SMTP host could not be resolved. Check MAIL_HOST and your network connection.";
+        }
+        if (cause instanceof java.net.ConnectException || cause instanceof java.net.SocketTimeoutException) {
+            return "Could not connect to the SMTP server. Check MAIL_HOST, MAIL_PORT, and outbound network access.";
+        }
+        if (cause instanceof jakarta.mail.MessagingException) {
+            return "The SMTP server rejected the message. Check MAIL_FROM and ensure it matches the authenticated sender.";
+        }
+        return "SMTP delivery failed. Check MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, and MAIL_FROM.";
     }
     private String template(String name,String email,String password){return """
       <!doctype html><html><body style='margin:0;background:#0A0A0A;font-family:Arial,sans-serif;color:#F7F7F7'>

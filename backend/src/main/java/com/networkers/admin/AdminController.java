@@ -20,9 +20,13 @@ import com.networkers.joinrequest.JoinRequestStatus;
 import com.networkers.mail.AccountMailService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @RestController
@@ -38,11 +42,20 @@ public class AdminController {
     private final JoinRequestRepository joinRequests;
     private final AccountMailService mail;
     private final UserDeletionService userDeletionService;
-    public AdminController(UserRepository users, ChapterRepository chapters, PasswordEncoder encoder, BusinessProfileRepository businesses, ConnectionRepository connections, ReferralRepository referrals, MeetupRepository meetups, JoinRequestRepository joinRequests, AccountMailService mail, UserDeletionService userDeletionService) {
-        this.users = users; this.chapters = chapters; this.encoder = encoder; this.businesses = businesses; this.connections = connections; this.referrals = referrals; this.meetups = meetups; this.joinRequests = joinRequests; this.mail = mail; this.userDeletionService = userDeletionService;
+    private final MemberExportService memberExportService;
+    public AdminController(UserRepository users, ChapterRepository chapters, PasswordEncoder encoder, BusinessProfileRepository businesses, ConnectionRepository connections, ReferralRepository referrals, MeetupRepository meetups, JoinRequestRepository joinRequests, AccountMailService mail, UserDeletionService userDeletionService, MemberExportService memberExportService) {
+        this.users = users; this.chapters = chapters; this.encoder = encoder; this.businesses = businesses; this.connections = connections; this.referrals = referrals; this.meetups = meetups; this.joinRequests = joinRequests; this.mail = mail; this.userDeletionService = userDeletionService; this.memberExportService = memberExportService;
     }
     @GetMapping("/dashboard") public ApiResponse<Map<String, Object>> dashboard() { return ApiResponse.ok("Dashboard", analytics()); }
     @GetMapping("/users") public ApiResponse<?> users() { return ApiResponse.ok("Users", users.findByRole(Role.USER)); }
+    @GetMapping("/users/export")
+    public ResponseEntity<byte[]> exportUsers() {
+        String filename = "networkers-members-" + LocalDate.now().format(DateTimeFormatter.ISO_DATE) + ".xlsx";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(memberExportService.exportMembers());
+    }
     @Transactional
     @PostMapping("/users/create") public ApiResponse<?> createUser(@RequestBody CreateUserRequest request) {
         validateUserRequest(request, true);

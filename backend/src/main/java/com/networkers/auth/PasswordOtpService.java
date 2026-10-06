@@ -23,7 +23,8 @@ public class PasswordOtpService {
 
     @Transactional
     public void issue(User user, PasswordOtpPurpose purpose) {
-        otps.findTopByUserAndPurposeAndUsedFalseOrderByCreatedAtDesc(user, purpose).ifPresent(existing -> {
+        var existingOtp = otps.findTopByUserAndPurposeAndUsedFalseOrderByCreatedAtDesc(user, purpose);
+        existingOtp.ifPresent(existing -> {
             if (existing.getCreatedAt() != null && existing.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(60)))
                 throw new IllegalStateException("Please wait one minute before requesting another OTP");
             existing.setUsed(true); otps.save(existing);
@@ -33,8 +34,13 @@ public class PasswordOtpService {
         otp.setUser(user); otp.setPurpose(purpose); otp.setCodeHash(encoder.encode(code));
         otp.setExpiresAt(LocalDateTime.now().plusMinutes(EXPIRY_MINUTES));
         otps.save(otp);
-        mail.sendPasswordOtp(user.getFullName(), user.getEmail(), code,
-                purpose == PasswordOtpPurpose.FORGOT_PASSWORD ? "reset your password" : "change your password");
+        try {
+            mail.sendPasswordOtp(user.getFullName(), user.getEmail(), code,
+                    purpose == PasswordOtpPurpose.FORGOT_PASSWORD ? "reset your password" : "change your password");
+        } catch (RuntimeException ex) {
+            // The transaction rolls back both the new OTP and invalidation of the old one.
+            throw new IllegalStateException("We couldn't send the verification email. Check the mail server settings and try again.", ex);
+        }
     }
 
     @Transactional

@@ -14,6 +14,8 @@ import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
 import { chapterApi } from "../../api/chapterApi.js";
 import { eventApi } from "../../api/eventApi.js";
 
+const registrationFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfszQkYCKMz1Z636xTm0QArgrPE3Q0UdS2JQsXTrjaDeyuVXg/viewform?usp=header";
+
 const heroSlides = [
   {
     src: "/gallery/mainheronetworkers.webp",
@@ -192,6 +194,14 @@ export default function LandingPage() {
                     <p className="mt-4 line-clamp-2 text-[#888]">
                       {event.description}
                     </p>
+                    <a
+                      href={registrationFormUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="glow-button glow-button-primary mt-6 w-full"
+                    >
+                      Register for Event
+                    </a>
                   </GlowCard>
                 </ScrollReveal>
               ))}

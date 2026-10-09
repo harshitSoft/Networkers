@@ -7,6 +7,7 @@ import GlowCard from "../../components/ui/GlowCard.jsx";
 import ScrollReveal from "../../components/ui/ScrollReveal.jsx";
 
 const fallback = "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80";
+const registrationFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfszQkYCKMz1Z636xTm0QArgrPE3Q0UdS2JQsXTrjaDeyuVXg/viewform?usp=header";
 
 export default function PublicEvents() {
   const [events, setEvents] = useState([]);
@@ -17,5 +18,5 @@ export default function PublicEvents() {
 
 function EventCard({ event }) {
   const image = event.images?.[0]?.imageUrl || fallback;
-  return <GlowCard className="h-full"><div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0"><img loading="lazy" src={image} alt={event.title} className="h-full w-full object-cover"/><span className="absolute left-4 top-4 z-10 rounded-xl bg-red-600 px-3 py-2 font-data text-xs font-bold">{event.eventDate||"SOON"}</span></div><span className="status-pill">Upcoming</span><h2 className="mt-4 text-2xl font-bold">{event.title}</h2><div className="mt-4 grid gap-2 text-sm text-[#b3b3b3]"><p className="flex items-center gap-2"><CalendarDays size={16} className="text-red-500"/>{event.eventDate} {event.eventTime&&`· ${event.eventTime}`}</p><p className="flex items-center gap-2"><MapPin size={16} className="text-red-500"/>{event.location}</p></div><p className="mt-4 line-clamp-2 leading-7 text-[#888]">{event.description}</p><div className="mt-6 flex items-center justify-between gap-3"><button className="glow-button glow-button-primary !px-4 !py-2">View Details</button><span className="flex items-center gap-1 text-xs text-red-400"><Users size={14}/> Limited spots</span></div></GlowCard>;
+  return <GlowCard className="h-full"><div className="image-frame -mx-6 -mt-6 mb-6 aspect-video rounded-t-3xl border-0"><img loading="lazy" src={image} alt={event.title} className="h-full w-full object-cover"/><span className="absolute left-4 top-4 z-10 rounded-xl bg-red-600 px-3 py-2 font-data text-xs font-bold">{event.eventDate||"SOON"}</span></div><span className="status-pill">Upcoming</span><h2 className="mt-4 text-2xl font-bold">{event.title}</h2><div className="mt-4 grid gap-2 text-sm text-[#b3b3b3]"><p className="flex items-center gap-2"><CalendarDays size={16} className="text-red-500"/>{event.eventDate} {event.eventTime&&`· ${event.eventTime}`}</p><p className="flex items-center gap-2"><MapPin size={16} className="text-red-500"/>{event.location}</p></div><p className="mt-4 line-clamp-2 leading-7 text-[#888]">{event.description}</p><div className="mt-6 flex items-center justify-between gap-3"><a href={registrationFormUrl} target="_blank" rel="noreferrer" className="glow-button glow-button-primary !px-4 !py-2">Register for Event</a><span className="flex items-center gap-1 text-xs text-red-400"><Users size={14}/> Limited spots</span></div></GlowCard>;
 }

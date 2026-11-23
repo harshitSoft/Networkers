@@ -45,8 +45,12 @@ import VisitorDetails from "../pages/admin/VisitorDetails.jsx";
 import ManageGallery from "../pages/admin/ManageGallery.jsx";
 import UserControl from "../pages/admin/UserControl.jsx";
 import EventFees from "../pages/admin/EventFees.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import Tips from "../pages/tips/Tips.jsx";
+import ManageTips from "../pages/admin/ManageTips.jsx";
 
 export default function AppRoutes() {
+  const { user, isAdmin } = useAuth();
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -60,7 +64,7 @@ export default function AppRoutes() {
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />} />
           <Route path="/public-dashboard" element={<PublicDashboard />} />
           <Route path="/business/profile" element={<BusinessProfile />} />
           <Route path="/business/directory" element={<BusinessDirectory />} />
@@ -84,11 +88,13 @@ export default function AppRoutes() {
           <Route path="/community" element={<CommunityFeed />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/tips" element={<Tips />} />
+          <Route path="/tips/:id" element={<Tips />} />
         </Route>
       </Route>
       <Route element={<AdminRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" replace />} />
           <Route path="/admin/users" element={<ManageUsers />} />
           <Route path="/admin/users/create" element={<CreateUser />} />
           <Route path="/admin/members/create" element={<CreateUser />} />
@@ -106,6 +112,7 @@ export default function AppRoutes() {
           <Route path="/admin/monthly-meetings" element={<ManageMonthlyMeetings />} />
           <Route path="/admin/visitors" element={<ManageVisitors />} />
           <Route path="/admin/visitors/details" element={<VisitorDetails />} />
+          <Route path="/admin/tips" element={user?.role === "SUPER_ADMIN" ? <ManageTips /> : <Navigate to="/admin" replace />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

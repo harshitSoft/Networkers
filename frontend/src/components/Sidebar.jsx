@@ -1,4 +1,4 @@
-import {BarChart3,CalendarDays,ChevronDown,ClipboardList,Handshake,Home,Image,Network,Newspaper,Send,Shield,UserRoundPlus,Users,UserCircle,X} from "lucide-react";
+import {BarChart3,CalendarDays,ChevronDown,ClipboardList,Handshake,Home,Image,Lightbulb,Network,Newspaper,Send,Shield,UserRoundPlus,Users,UserCircle,X} from "lucide-react";
 import {Link,NavLink,useLocation} from "react-router-dom";
 import {useEffect,useState} from "react";
 import {useAuth} from "../context/AuthContext.jsx";
@@ -11,10 +11,11 @@ export const userLinks=[
   ["/user/chapters","Chapters",Network],
   ["/user/events","Chapter Events",CalendarDays],
   ["/profile","Profile",UserCircle],
+  ["/tips","Tips & Updates",Lightbulb],
 ];
 export const communityLinks=[["/community","Community Stories",Newspaper],["/public-dashboard","Community Dashboard",BarChart3]];
 export const referralLinks=[["/give-referral","Give Referral",Send],["/referrals/received","Referrals Received",Handshake],["/referrals/given","Referrals Given",Send]];
-export const adminLinks=[["/admin/revenue-analytics","Analytics",BarChart3],["/admin","Command Center",Shield],["/admin/visitors","Manage Visitors",UserRoundPlus],["/admin/visitors/details","Visitor Details",ClipboardList],["/admin/members/create","Create Member",Users],["/admin/gallery","Event Gallery",Image],["/admin/user-control","User Control",Shield],["/admin/chapters","Chapters",Network],["/admin/events","Events",CalendarDays],["/admin/event-fees","Event Fees",Handshake],["/admin/monthly-meetings","Face to Face",CalendarDays],["/admin/referrals","Referrals",Handshake],["/profile","My Profile",UserCircle]];
+export const adminLinks=[["/admin/revenue-analytics","Analytics",BarChart3],["/admin","Command Center",Shield],["/admin/visitors","Manage Visitors",UserRoundPlus],["/admin/visitors/details","Visitor Details",ClipboardList],["/admin/members/create","Create Member",Users],["/admin/gallery","Event Gallery",Image],["/admin/tips","Tips Management",Lightbulb],["/admin/user-control","User Control",Shield],["/admin/chapters","Chapters",Network],["/admin/events","Events",CalendarDays],["/admin/event-fees","Event Fees",Handshake],["/admin/monthly-meetings","Face to Face",CalendarDays],["/admin/referrals","Referrals",Handshake],["/profile","My Profile",UserCircle]];
 
 export default function Sidebar({mobile=false,open=false,onClose}){
   const{isAdmin,user}=useAuth();const location=useLocation();const close=()=>onClose?.();

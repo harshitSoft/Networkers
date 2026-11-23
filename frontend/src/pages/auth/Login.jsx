@@ -39,7 +39,7 @@ export default function Login() {
       navigate(
         user.role === "SUPER_ADMIN" || user.role === "ADMIN"
           ? "/admin"
-          : "/community",
+          : "/dashboard",
       );
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");

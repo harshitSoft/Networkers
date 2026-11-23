@@ -1,4 +1,4 @@
-import {BarChart3,CalendarDays,ChevronDown,ClipboardList,Handshake,Home,Image,Lightbulb,Network,Newspaper,Send,Shield,UserRoundPlus,Users,UserCircle,X} from "lucide-react";
+import {BarChart3,CalendarDays,ChevronDown,ClipboardList,Handshake,Home,Image,Lightbulb,Network,Newspaper,Send,Shield,UserRoundPlus,Users,UserCircle,X,Globe2} from "lucide-react";
 import {Link,NavLink,useLocation} from "react-router-dom";
 import {useEffect,useState} from "react";
 import {useAuth} from "../context/AuthContext.jsx";
@@ -8,6 +8,7 @@ export const userLinks=[
   ["/dashboard","My Analytics",Home],
   ["/business/profiles","Business Profiles",Users],
   ["/meetings","Face to Face",CalendarDays],
+  ["/groups","Global Groups",Globe2],
   ["/user/chapters","Chapters",Network],
   ["/user/events","Chapter Events",CalendarDays],
   ["/profile","Profile",UserCircle],

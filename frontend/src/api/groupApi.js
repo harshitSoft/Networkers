@@ -1,0 +1,26 @@
+import api,{unwrap} from "./axios";
+export const groupApi={
+ categories:()=>api.get("/group-categories").then(unwrap),
+ discover:(params={})=>api.get("/groups",{params}).then(unwrap),
+ suggested:(params={})=>api.get("/groups/suggested",{params}).then(unwrap),
+ get:id=>api.get(`/groups/${id}`).then(unwrap),
+ create:payload=>api.post("/groups",payload).then(unwrap),
+ update:(id,payload)=>api.put(`/groups/${id}`,payload).then(unwrap),
+ remove:id=>api.delete(`/groups/${id}`).then(unwrap),
+ join:id=>api.post(`/groups/${id}/join`).then(unwrap),
+ leave:id=>api.delete(`/groups/${id}/leave`).then(unwrap),
+ my:(params={})=>api.get("/groups/my-groups",{params}).then(unwrap),
+ members:(id,params={})=>api.get(`/groups/${id}/members`,{params}).then(unwrap),
+ searchMembers:(params={})=>api.get("/groups/members/search",{params}).then(unwrap),
+ invite:(id,memberIds)=>api.post(`/groups/${id}/invitations`,{memberIds}).then(unwrap),
+ received:(params={})=>api.get("/groups/invitations/received",{params}).then(unwrap),
+ sent:(params={})=>api.get("/groups/invitations/sent",{params}).then(unwrap),
+ accept:id=>api.post(`/groups/invitations/${id}/accept`).then(unwrap),
+ decline:id=>api.post(`/groups/invitations/${id}/decline`).then(unwrap),
+ topics:(id,params={})=>api.get(`/groups/${id}/topics`,{params}).then(unwrap),
+ topic:(groupId,topicId,params={})=>api.get(`/groups/${groupId}/topics/${topicId}`,{params}).then(unwrap),
+ createTopic:(id,payload)=>api.post(`/groups/${id}/topics`,payload).then(unwrap),
+ comment:(groupId,topicId,comment)=>api.post(`/groups/${groupId}/topics/${topicId}/comments`,{comment}).then(unwrap),
+ editComment:(groupId,topicId,commentId,comment)=>api.put(`/groups/${groupId}/topics/${topicId}/comments/${commentId}`,{comment}).then(unwrap),
+ deleteComment:(groupId,topicId,commentId)=>api.delete(`/groups/${groupId}/topics/${topicId}/comments/${commentId}`).then(unwrap)
+};

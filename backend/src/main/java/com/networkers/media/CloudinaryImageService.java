@@ -57,6 +57,20 @@ public class CloudinaryImageService {
         return secureUrl.toString();
     }
 
+    public String uploadGroupAttachment(MultipartFile file, Long groupId, Long userId) throws IOException {
+        if (cloudinary == null) throw new IllegalStateException("Media storage is not configured. Set the CLOUDINARY_URL environment variable.");
+        if (file == null || file.isEmpty() || file.getSize() > 20L * 1024 * 1024) throw new IllegalArgumentException("Choose a file up to 20 MB");
+        String type = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        if (!type.startsWith("image/") && !type.startsWith("application/pdf") && !type.startsWith("text/")) throw new IllegalArgumentException("Group attachments must be images, PDFs, or text documents");
+        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderRoot + "/group-attachments/" + groupId,
+                "public_id", "member-" + userId + "-" + System.currentTimeMillis(),
+                "resource_type", "auto"));
+        Object url = result.get("secure_url");
+        if (url == null) throw new IllegalStateException("Cloudinary did not return an attachment URL");
+        return url.toString();
+    }
+
     public String uploadPairMeetingPhoto(MultipartFile file, Long meetingId, Long userId) throws IOException {
         if (cloudinary == null) throw new IllegalStateException("Media storage is not configured. Set the CLOUDINARY_URL environment variable.");
         Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(

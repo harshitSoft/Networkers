@@ -48,6 +48,14 @@ import EventFees from "../pages/admin/EventFees.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Tips from "../pages/tips/Tips.jsx";
 import ManageTips from "../pages/admin/ManageTips.jsx";
+import GroupsPage from "../pages/groups/GroupsPage.jsx";
+import CreateGroupPage from "../pages/groups/CreateGroupPage.jsx";
+import GroupDetailPage from "../pages/groups/GroupDetailPage.jsx";
+import GroupMembersPage from "../pages/groups/GroupMembersPage.jsx";
+import InviteMembersPage from "../pages/groups/InviteMembersPage.jsx";
+import GroupInvitationsPage from "../pages/groups/GroupInvitationsPage.jsx";
+import CreateTopicPage from "../pages/groups/CreateTopicPage.jsx";
+import TopicDiscussionPage from "../pages/groups/TopicDiscussionPage.jsx";
 
 export default function AppRoutes() {
   const { user, isAdmin } = useAuth();
@@ -86,6 +94,14 @@ export default function AppRoutes() {
           <Route path="/meetups/:id" element={<MeetupDetails />} />
           <Route path="/meetings" element={<MyMeetings />} />
           <Route path="/community" element={<CommunityFeed />} />
+          <Route path="/groups" element={<GroupsPage />} />
+          <Route path="/groups/create" element={<CreateGroupPage />} />
+          <Route path="/groups/invitations" element={<GroupInvitationsPage />} />
+          <Route path="/groups/:id" element={<GroupDetailPage />} />
+          <Route path="/groups/:id/members" element={<GroupMembersPage />} />
+          <Route path="/groups/:id/invite" element={<InviteMembersPage />} />
+          <Route path="/groups/:id/topics/new" element={<CreateTopicPage />} />
+          <Route path="/groups/:id/topics/:topicId" element={<TopicDiscussionPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tips" element={<Tips />} />

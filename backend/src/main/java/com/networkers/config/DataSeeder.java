@@ -23,6 +23,7 @@ public class DataSeeder {
         return args -> {
             normalizeLegacyEnumColumns(jdbc);
             migrateFaceToFaceCycles(jdbc);
+            migrateConnectionModule(jdbc);
             migrateLegacyRoles(users);
             if (!users.existsByEmail(adminEmail)) {
                 User admin = new User();
@@ -35,6 +36,19 @@ public class DataSeeder {
                 users.save(admin);
             }
         };
+    }
+
+    private void migrateConnectionModule(JdbcTemplate jdbc) {
+        jdbc.execute("alter table connection add column if not exists message varchar(500)");
+        jdbc.execute("alter table connection add column if not exists responded_at timestamp");
+        jdbc.execute("alter table notification add column if not exists action_url varchar(500)");
+        jdbc.execute("alter table business_profile add column if not exists professional_title varchar(255)");
+        jdbc.execute("alter table business_profile add column if not exists country varchar(255)");
+        jdbc.execute("create index if not exists idx_connection_sender_status_created on connection(sender_id,status,created_at desc)");
+        jdbc.execute("create index if not exists idx_connection_receiver_status_created on connection(receiver_id,status,created_at desc)");
+        jdbc.execute("create index if not exists idx_users_directory_name on users(lower(full_name)) where enabled=true and deleted=false");
+        jdbc.execute("create index if not exists idx_users_directory_category on users(lower(business_category)) where enabled=true and deleted=false");
+        jdbc.execute("create unique index if not exists uk_connection_active_pair on connection (least(sender_id, receiver_id), greatest(sender_id, receiver_id)) where status in ('PENDING','ACCEPTED')");
     }
 
     private void migrateFaceToFaceCycles(JdbcTemplate jdbc) {

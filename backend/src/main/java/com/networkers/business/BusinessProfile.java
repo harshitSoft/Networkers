@@ -12,6 +12,7 @@ public class BusinessProfile {
     private User user;
     private String businessName;
     private String ownerName;
+    private String professionalTitle;
     private String category;
     @Column(length = 2000)
     private String description;
@@ -21,6 +22,7 @@ public class BusinessProfile {
     private String lookingFor;
     private String city;
     private String state;
+    private String country;
     private String address;
     private String website;
     private String businessEmail;
@@ -43,6 +45,8 @@ public class BusinessProfile {
     public void setBusinessName(String businessName) { this.businessName = businessName; }
     public String getOwnerName() { return ownerName; }
     public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+    public String getProfessionalTitle() { return professionalTitle; }
+    public void setProfessionalTitle(String professionalTitle) { this.professionalTitle = professionalTitle; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     public String getDescription() { return description; }
@@ -55,6 +59,8 @@ public class BusinessProfile {
     public void setCity(String city) { this.city = city; }
     public String getState() { return state; }
     public void setState(String state) { this.state = state; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getWebsite() { return website; }

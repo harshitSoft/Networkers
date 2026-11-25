@@ -17,6 +17,9 @@ import BusinessProfile from "../pages/business/BusinessProfile.jsx";
 import BusinessDirectory from "../pages/business/BusinessDirectory.jsx";
 import BusinessDetails from "../pages/business/BusinessDetails.jsx";
 import MyNetwork from "../pages/connections/MyNetwork.jsx";
+import ConnectionsDashboard from "../pages/connections/ConnectionsDashboard.jsx";
+import MemberDirectory from "../pages/connections/MemberDirectory.jsx";
+import MemberProfile from "../pages/connections/MemberProfile.jsx";
 import ReferralsReceived from "../pages/referrals/ReferralsReceived.jsx";
 import ReferralsGiven from "../pages/referrals/ReferralsGiven.jsx";
 import GiveReferral from "../pages/referrals/GiveReferral.jsx";
@@ -47,6 +50,7 @@ import UserControl from "../pages/admin/UserControl.jsx";
 import EventFees from "../pages/admin/EventFees.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Tips from "../pages/tips/Tips.jsx";
+import Tyfcb from "../pages/tyfcb/Tyfcb.jsx";
 import ManageTips from "../pages/admin/ManageTips.jsx";
 import GroupsPage from "../pages/groups/GroupsPage.jsx";
 import CreateGroupPage from "../pages/groups/CreateGroupPage.jsx";
@@ -56,6 +60,9 @@ import InviteMembersPage from "../pages/groups/InviteMembersPage.jsx";
 import GroupInvitationsPage from "../pages/groups/GroupInvitationsPage.jsx";
 import CreateTopicPage from "../pages/groups/CreateTopicPage.jsx";
 import TopicDiscussionPage from "../pages/groups/TopicDiscussionPage.jsx";
+import Testimonials from "../pages/testimonials/Testimonials.jsx";
+import ManageTestimonials from "../pages/admin/ManageTestimonials.jsx";
+import ManageConnections from "../pages/admin/ManageConnections.jsx";
 
 export default function AppRoutes() {
   const { user, isAdmin } = useAuth();
@@ -81,11 +88,19 @@ export default function AppRoutes() {
           <Route path="/business/:id" element={<BusinessDetails />} />
           <Route path="/businesses/:id" element={<BusinessDetails />} />
           <Route path="/connections" element={<MyNetwork />} />
+          <Route path="/connections/dashboard" element={<ConnectionsDashboard />} />
+          <Route path="/connections/discover" element={<MemberDirectory />} />
+          <Route path="/connections/members/:id" element={<MemberProfile />} />
           <Route path="/network" element={<MyNetwork />} />
           <Route path="/referrals/received" element={<ReferralsReceived />} />
           <Route path="/referrals/given" element={<ReferralsGiven />} />
           <Route path="/give-referral" element={<GiveReferral />} />
           <Route path="/referrals/create" element={<GiveReferral />} />
+          <Route path="/tyfcb" element={<Tyfcb />} />
+          <Route path="/tyfcb/give" element={<Tyfcb />} />
+          <Route path="/tyfcb/history" element={<Tyfcb />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/testimonials/history" element={<Testimonials />} />
           <Route path="/user/chapters" element={<UserChapters />} />
           <Route path="/user/events" element={<UserEvents />} />
           <Route path="/opportunities" element={<BusinessOpportunities />} />
@@ -129,6 +144,8 @@ export default function AppRoutes() {
           <Route path="/admin/visitors" element={<ManageVisitors />} />
           <Route path="/admin/visitors/details" element={<VisitorDetails />} />
           <Route path="/admin/tips" element={user?.role === "SUPER_ADMIN" ? <ManageTips /> : <Navigate to="/admin" replace />} />
+          <Route path="/admin/testimonials" element={<ManageTestimonials />} />
+          <Route path="/admin/connections" element={<ManageConnections />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -70,12 +70,14 @@ public class BusinessController {
     static BusinessProfile apply(BusinessProfile p, BusinessProfileRequest r) {
         p.setBusinessName(r.businessName());
         p.setOwnerName(r.ownerName());
+        p.setProfessionalTitle(r.professionalTitle());
         p.setCategory(r.category());
         p.setDescription(r.description());
         p.setServices(r.services());
         p.setLookingFor(r.lookingFor());
         p.setCity(r.city());
         p.setState(r.state());
+        p.setCountry(r.country());
         p.setAddress(r.address());
         p.setWebsite(normalizeWebsite(r.website()));
         p.setBusinessEmail(r.businessEmail());
@@ -94,8 +96,8 @@ public class BusinessController {
         return website.matches("(?i)^https?://.*") ? website : "https://" + website;
     }
 
-    public record BusinessProfileRequest(@NotBlank String businessName, String ownerName, String category, String description,
+    public record BusinessProfileRequest(@NotBlank String businessName, String ownerName, String professionalTitle, String category, String description,
                                          String services, String lookingFor, String city, String state, String address,
-                                         String website, String businessEmail, String businessPhone, Integer foundedYear,
+                                         String country, String website, String businessEmail, String businessPhone, Integer foundedYear,
                                          String teamSize, String logoUrl) {}
 }

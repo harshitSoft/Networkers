@@ -14,15 +14,19 @@ import { authApi } from "../../api/authApi";
 import { businessApi } from "../../api/businessApi";
 import PasswordField from "../../components/PasswordField.jsx";
 import { normalizePhone, normalizeWebsite } from "../../utils/formValues.js";
+import { testimonialApi } from "../../api/testimonialApi";
+import { Link } from "react-router-dom";
 const emptyBusiness = {
   businessName: "",
   ownerName: "",
+  professionalTitle: "",
   category: "",
   description: "",
   services: "",
   lookingFor: "",
   city: "",
   state: "",
+  country: "",
   address: "",
   website: "",
   businessEmail: "",
@@ -36,6 +40,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, updateCurrentUser, logout } = useAuth();
   const [tab, setTab] = useState(searchParams.get("tab") === "business" ? "business" : "personal");
+  const [testimonials, setTestimonials] = useState([]);
+  useEffect(() => { if(user?.id) testimonialApi.received().then(v=>setTestimonials(v?.items||[])).catch(()=>{}); }, [user?.id]);
   const [personal, setPersonal] = useState({
     fullName: user.fullName || "",
     email: user.email || "",
@@ -189,6 +195,7 @@ export default function Profile() {
         ))}
       </div>
       {tab === "personal" && (
+        <>
         <ProfileForm
           title="Personal information"
           copy="Update your name, contact number, and location."
@@ -213,6 +220,8 @@ export default function Profile() {
             Save personal profile
           </button>
         </ProfileForm>
+        <section className="rounded-2xl border border-white/10 bg-white/[.035] p-5 text-white"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">Testimonials & Recommendations</h2><p className="mt-1 text-sm text-slate-400">{testimonials.length} approved recommendations · visible to members</p></div><Link to="/testimonials?tab=received" className="btn-muted">View all</Link></div>{testimonials.slice(0,3).map(t=><article key={t.id} className="mt-4 rounded-xl border border-white/10 p-4"><p className="text-xs text-slate-500">{t.experienceDate}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300">“{t.description}”</p><p className="mt-3 text-sm font-bold">{t.sender?.fullName}</p></article>)}{!testimonials.length&&<p className="mt-4 text-sm text-slate-500">Approved recommendations received from members appear here.</p>}</section>
+        </>
       )}
       {tab === "security" && (
         <ProfileForm
@@ -290,12 +299,14 @@ export default function Profile() {
           {[
             ["businessName", "Business name", "text"],
             ["ownerName", "Owner name", "text"],
+            ["professionalTitle", "Professional title", "text"],
             ["category", "Category", "text"],
             ["businessEmail", "Business email", "email"],
             ["businessPhone", "Business phone", "tel"],
             ["website", "Website", "url"],
             ["city", "City", "text"],
             ["state", "State", "text"],
+            ["country", "Country", "text"],
             ["address", "Address", "text"],
             ["foundedYear", "Founded year", "number"],
             ["teamSize", "Team size", "text"],
